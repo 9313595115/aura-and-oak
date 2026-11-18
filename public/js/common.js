@@ -69,6 +69,14 @@ function fmt(n) {
   catch { return '$' + (Number(n) || 0).toFixed(2); }
 }
 
+// Bundled photos in /images/ ship with WebP copies (name.webp + a small name-sm.webp).
+// Returns a srcset attribute for those so phones download the small file; '' for anything else.
+function imgSrcset(url) {
+  const m = /^\/?images\/([\w-]+)\.jpg$/.exec(String(url || ''));
+  const v = (__cfg && __cfg.imgVariants) || [];
+  return m && v.includes(m[1]) ? `srcset="/images/${m[1]}-sm.webp 600w, /images/${m[1]}.webp 1000w"` : '';
+}
+
 function productUrl(p) {
   return p && p.slug ? '/product/' + encodeURIComponent(p.slug) : '/product.html?id=' + encodeURIComponent((p && (p.product_id || p.id)) || '');
 }

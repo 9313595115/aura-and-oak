@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Your Order — Aura & Oak</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#F9F6F0" />
+  <title>Your Order — Aura & Oak</title>
 <meta name="robots" content="noindex" />
 <meta name="description" content="Your Aura & Oak order is confirmed." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,7 +18,7 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055;
-    --primary: #B85A44; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
+    --primary: #A04B37; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
     --radius: 4px; --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
@@ -51,7 +56,7 @@
 </head>
 <body>
 
-<nav><a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a></nav>
+<nav><a href="/" class="nav-logo">Aura <span>&</span> Oak</a></nav>
 
 <div class="wrap" id="confirmWrap">
   <p style="color:var(--text2)">Loading your order…</p>
@@ -123,10 +128,10 @@
         </div>
 
         <div class="actions">
-          <a href="shop.html" class="btn-primary">Continue Shopping</a>
+          <a href="/shop" class="btn-primary">Continue Shopping</a>
           <a href="account.html" class="btn-secondary">${isLoggedIn() ? 'View Order History' : 'Create an Account'}</a>
         </div>
-        <p class="lookup-note">Questions about this order? <a href="contact.html" style="text-decoration:underline">Contact us</a> with your order number.</p>
+        <p class="lookup-note">Questions about this order? <a href="/contact" style="text-decoration:underline">Contact us</a> with your order number.</p>
       `;
       if (fresh) loadCartCount();
     } catch (e) {

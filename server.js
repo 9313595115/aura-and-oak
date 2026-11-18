@@ -240,8 +240,8 @@ function localBusinessLd() {
   const ld = {
     "@context": "https://schema.org", "@type": "HomeGoodsStore",
     name: STORE.name, description: STORE.tagline, url: BASE_URL + "/",
-    image: absUrl("/images/hero.jpg"), logo: absUrl("/images/hero.jpg"),
-    priceRange: "$$", currenciesAccepted: STORE.currency,
+    image: absUrl("/images/hero.jpg"), logo: absUrl("/images/logo.png"),
+    priceRange: STORE.currency === "INR" ? "₹₹" : "$$", currenciesAccepted: STORE.currency,
   };
   if (STORE.phone) ld.telephone = STORE.phone;
   if (STORE.email) ld.email = STORE.email;
@@ -254,8 +254,52 @@ function localBusinessLd() {
   return ld;
 }
 
-function renderPage(res, file, { title, description, canonical, image, type = "website", ld = [], status = 200, noindex = false } = {}) {
+// Photos bundled in /public/images that have WebP copies (name.webp + name-sm.webp)
+const IMG_VARIANTS = (() => {
+  try { return fs.readdirSync(path.join(PUBLIC_DIR, "images")).filter((f) => f.endsWith("-sm.webp")).map((f) => f.slice(0, -8)); }
+  catch { return []; }
+})();
+function imgSrcset(url) {
+  const m = /^\/?images\/([\w-]+)\.jpg$/.exec(String(url || ""));
+  return m && IMG_VARIANTS.includes(m[1]) ? ` srcset="/images/${m[1]}-sm.webp 600w, /images/${m[1]}.webp 1000w"` : "";
+}
+const priceShort = (n) => money(n).replace(/\.00$/, "");
+
+// Plain HTML versions of what the page scripts draw, so search engines (and
+// visitors before JavaScript runs) see real products, prices and links.
+function cardHtml(p) {
+  const url = esc(productPath(p));
+  return `<div class="product-card"><div class="product-card-img"><a href="${url}"><img src="${esc(p.image_url)}"${imgSrcset(p.image_url)} sizes="(max-width: 640px) 92vw, 300px" width="1000" height="1250" alt="${esc(p.name)}" loading="lazy" decoding="async" /></a></div>`
+    + `<div class="product-card-body"><p class="product-card-category">${esc(p.category || "")}</p><h3 class="product-card-name"><a href="${url}">${esc(p.name)}</a></h3><p class="product-card-price">${esc(money(p.price))}</p></div></div>`;
+}
+function categoryPath(c) { return c.slug ? `/shop/${encodeURIComponent(c.slug)}` : `/shop?category=${c.id}`; }
+
+// Search-friendly wording per category (falls back to generic copy for new categories)
+const CATEGORY_SEO = {
+  textiles:  { phrase: "Linen Cushions, Throws & Blankets", intro: "Linen cushions, merino throws and soft furnishings woven to layer warmth into every room." },
+  lighting:  { phrase: "Table Lamps & Home Lighting", intro: "Hand-finished brass table lamps and warm lighting that make a room glow in the evening." },
+  decor:     { phrase: "Ceramic Vases, Candles & Decor Accents", intro: "Hand-thrown ceramic vases, soy wax candles and small accents that finish a space." },
+  furniture: { phrase: "Wooden Side Tables & Furniture", intro: "Solid and reclaimed wood side tables and furniture built to last for decades." },
+  art:       { phrase: "Wall Art & Canvas Prints", intro: "Abstract canvas prints and original-style wall art, stretched and ready to hang." },
+  rugs:      { phrase: "Jute & Hand-woven Area Rugs", intro: "Natural jute and hand-woven area rugs that ground a living room or bedroom." },
+};
+const categorySeo = (c) => CATEGORY_SEO[c.slug] || { phrase: c.name, intro: `Explore our ${c.name.toLowerCase()} collection — every piece chosen for craft, material and lasting beauty.` };
+
+const SHOP_SELECT = `SELECT p.id, p.name, p.price, p.image_url, p.slug, p.category_id, p.is_featured, p.description, p.stock_qty, c.name AS category
+  FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1`;
+const freeShipLine = () => (STORE.free_shipping_threshold > 0 ? ` Free shipping over ${priceShort(STORE.free_shipping_threshold)}.` : "");
+const breadcrumbLd = (items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList",
+  itemListElement: items.map(([name, url], i) => ({ "@type": "ListItem", position: i + 1, name, item: BASE_URL + url })) });
+
+// Fill <!--SSR:key-->…<!--/SSR:key--> regions of a page with server-rendered HTML
+function fillSsr(html, fill) {
+  for (const [k, v] of Object.entries(fill)) html = html.replace(new RegExp(`<!--SSR:${k}-->[\\s\\S]*?<!--/SSR:${k}-->`), () => v);
+  return html;
+}
+
+function renderPage(res, file, { title, description, canonical, image, type = "website", ld = [], status = 200, noindex = false, fill = null, head = "" } = {}) {
   let html = readPage(file);
+  if (fill) html = fillSsr(html, fill);
   if (title) html = html.replace(/<title>[\s\S]*?<\/title>/, `<title>${esc(title)}</title>`);
   const tags = [];
   if (description) {
@@ -264,38 +308,114 @@ function renderPage(res, file, { title, description, canonical, image, type = "w
     tags.push(`<meta property="og:title" content="${esc(title || STORE.name)}" />`, `<meta property="og:description" content="${esc(description)}" />`);
     tags.push(`<meta property="og:type" content="${esc(type)}" />`, `<meta property="og:site_name" content="${esc(STORE.name)}" />`);
     tags.push(`<meta name="twitter:card" content="summary_large_image" />`);
-    if (image) tags.push(`<meta property="og:image" content="${esc(absUrl(image))}" />`);
+    if (image) tags.push(`<meta property="og:image" content="${esc(absUrl(image))}" />`, `<meta name="twitter:image" content="${esc(absUrl(image))}" />`);
+    tags.push(`<meta property="og:locale" content="${esc(STORE.locale.replace("-", "_"))}" />`);
   }
   if (canonical) tags.push(`<link rel="canonical" href="${esc(canonical)}" />`, `<meta property="og:url" content="${esc(canonical)}" />`);
   if (noindex) tags.push(`<meta name="robots" content="noindex" />`);
   ld.forEach((o) => tags.push(jsonLd(o)));
+  if (head) tags.push(head);
   html = html.includes("<!--SEO-->") ? html.replace("<!--SEO-->", tags.join("\n  ")) : html.replace("</head>", tags.join("\n") + "\n</head>");
   res.status(status).set("Cache-Control", "no-cache").type("html").send(html);
 }
 
-app.get(["/", "/index.html"], (req, res) => renderPage(res, "index.html", {
-  title: `${STORE.name} — Curated Home Decor${STORE.city ? " in " + STORE.city : ""}`,
-  description: `${STORE.tagline}${STORE.city ? ` Visit our store in ${STORE.city} or shop online.` : ""}`,
-  canonical: BASE_URL + "/", image: "/images/hero.jpg",
-  ld: [localBusinessLd(), { "@context": "https://schema.org", "@type": "WebSite", name: STORE.name, url: BASE_URL + "/",
-       potentialAction: { "@type": "SearchAction", target: `${BASE_URL}/shop.html?q={search_term_string}`, "query-input": "required name=search_term_string" } }],
+// Old .html addresses → permanent redirects to the clean URLs (one canonical address per page)
+const redirectTo = (to) => (req, res) => {
+  const q = req.originalUrl.indexOf("?");
+  res.redirect(301, to + (q >= 0 ? req.originalUrl.slice(q) : ""));
+};
+app.get("/index.html", redirectTo("/"));
+app.get("/contact.html", redirectTo("/contact"));
+app.get("/shipping.html", redirectTo("/shipping"));
+app.get("/returns.html", redirectTo("/returns"));
+app.get("/shop.html", h(async (req, res) => {
+  const catId = intIn(req.query.category, 1, 1e9);
+  const rest = new URLSearchParams(req.query); rest.delete("category");
+  const qs = rest.toString() ? "?" + rest : "";
+  if (catId) {
+    const [[c]] = await pool.query("SELECT id, slug FROM categories WHERE id = ?", [catId]);
+    if (c) return res.redirect(301, categoryPath(c) + (c.slug ? qs : ""));
+  }
+  res.redirect(301, "/shop" + qs);
 }));
 
-app.get(["/contact", "/contact.html"], (req, res) => renderPage(res, "contact.html", {
-  title: `Contact & Visit Us — ${STORE.name}`,
-  description: `Get in touch with ${STORE.name}${STORE.city ? `, ${STORE.city}` : ""}. Store address, opening hours, phone, and directions.`,
-  canonical: BASE_URL + "/contact.html", ld: [localBusinessLd()],
+app.get("/", h(async (req, res) => {
+  const [[featured], [cats]] = await Promise.all([
+    pool.query(`${SHOP_SELECT} AND p.is_featured = 1 ORDER BY p.id`),
+    pool.query("SELECT id, name, slug, image_url FROM categories ORDER BY name"),
+  ]);
+  const catHtml = cats.slice(0, 6).map((c) => `<a href="${esc(categoryPath(c))}" class="category-card"><img src="${esc(c.image_url)}"${imgSrcset(c.image_url)} sizes="(max-width: 640px) 92vw, 380px" width="1000" height="1250" alt="${esc(c.name)}" loading="lazy" decoding="async" /><div class="category-card-label"><span>${esc(c.name)}</span><small>Shop now</small></div></a>`).join("");
+  renderPage(res, "index.html", {
+    title: `${STORE.name} — Handcrafted Home Decor, Lighting & Furniture${STORE.city ? " in " + STORE.city : " Online"}`,
+    description: `Shop handcrafted home decor at ${STORE.name}: linen textiles, brass lamps, hand-thrown ceramic vases, rugs and reclaimed-wood furniture${STORE.city ? `, online or in our ${STORE.city} store` : ""}.${freeShipLine()}`,
+    canonical: BASE_URL + "/", image: "/images/hero.jpg",
+    head: `<link rel="preload" as="image" href="/images/hero.webp" imagesrcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" imagesizes="100vw" fetchpriority="high" />`,
+    fill: { featured: featured.map(cardHtml).join(""), categories: catHtml },
+    ld: [localBusinessLd(), { "@context": "https://schema.org", "@type": "WebSite", name: STORE.name, url: BASE_URL + "/",
+         potentialAction: { "@type": "SearchAction", target: `${BASE_URL}/shop?q={search_term_string}`, "query-input": "required name=search_term_string" } }],
+  });
 }));
 
-app.get(["/shop", "/shop.html"], h(async (req, res) => {
-  let title = `Shop All — ${STORE.name}`, canonical = BASE_URL + "/shop.html";
-  let description = `Shop the full ${STORE.name} collection — linen textiles, artisan lighting, hand-thrown ceramics, and reclaimed wood furniture.`;
+app.get("/contact", (req, res) => renderPage(res, "contact.html", {
+  title: `Contact & Visit Us${STORE.city ? " in " + STORE.city : ""} — ${STORE.name}`,
+  description: `Get in touch with ${STORE.name}${STORE.city ? ` in ${STORE.city}` : ""}: store address, opening hours, phone and email. Questions about a piece, an order or styling your space? We reply within one business day.`,
+  canonical: BASE_URL + "/contact", image: "/images/story.jpg",
+  ld: [localBusinessLd(), breadcrumbLd([["Home", "/"], ["Contact", "/contact"]])],
+}));
+app.get("/shipping", (req, res) => renderPage(res, "shipping.html", {
+  title: `Shipping Information — ${STORE.name}`,
+  description: `Delivery times, shipping rates and order tracking for ${STORE.name}.${freeShipLine()}`,
+  canonical: BASE_URL + "/shipping", image: "/images/hero.jpg",
+  ld: [breadcrumbLd([["Home", "/"], ["Shipping", "/shipping"]])],
+}));
+app.get("/returns", (req, res) => renderPage(res, "returns.html", {
+  title: `Returns & Exchanges — ${STORE.name}`,
+  description: `Changed your mind? ${STORE.name} offers ${STORE.return_days}-day returns and exchanges on unused items. See how to start a return and when refunds arrive.`,
+  canonical: BASE_URL + "/returns", image: "/images/hero.jpg",
+  ld: [breadcrumbLd([["Home", "/"], ["Returns", "/returns"]])],
+}));
+
+async function renderShop(req, res, cat) {
+  const [[products], [cats]] = await Promise.all([
+    pool.query(`${SHOP_SELECT}${cat ? " AND p.category_id = ?" : ""} ORDER BY p.is_featured DESC, p.id`, cat ? [cat.id] : []),
+    pool.query("SELECT id, name, slug FROM categories ORDER BY name"),
+  ]);
+  const seo = cat ? categorySeo(cat) : null;
+  const path_ = cat ? categoryPath(cat) : "/shop";
+  const canonical = BASE_URL + path_;
+  const title = cat ? `${seo.phrase} — Shop ${cat.name} | ${STORE.name}` : `Shop Handcrafted Home Decor Online | ${STORE.name}`;
+  const description = cat
+    ? `${seo.intro} Shop ${cat.name.toLowerCase()} at ${STORE.name}.${freeShipLine()}`
+    : `Shop the full ${STORE.name} collection: linen textiles, brass lighting, hand-thrown ceramics, wall art, rugs and reclaimed-wood furniture.${freeShipLine()}`;
+  const header = `<p class="page-header-eyebrow">${cat ? "Shop by category" : "The Collection"}</p>\n    <h1 id="shopTitle">${esc(cat ? cat.name : "Shop All")}</h1>\n    <p id="shopIntro">${esc(cat ? seo.intro : "Every piece chosen for its craft, material, and lasting beauty.")}</p>`;
+  // Crawlable links to every category (the interactive filter buttons are drawn by script)
+  const catLinks = `<nav class="sr-only" aria-label="Categories">${cats.map((c) => `<a href="${esc(categoryPath(c))}">${esc(c.name)}</a>`).join(" ")}</nav>`;
+  const crumbs = [["Home", "/"], ["Shop", "/shop"]]; if (cat) crumbs.push([cat.name, path_]);
+  renderPage(res, "shop.html", {
+    title, description, canonical, image: products[0] ? products[0].image_url : "/images/hero.jpg",
+    fill: { header: header + catLinks, grid: products.map(cardHtml).join(""), count: `${products.length} product${products.length === 1 ? "" : "s"}` },
+    head: cat ? `<script>window.__SHOP = { categoryId: ${Number(cat.id)} };</script>` : "",
+    ld: [
+      { "@context": "https://schema.org", "@type": "CollectionPage", name: cat ? cat.name : "Shop All", url: canonical, description,
+        mainEntity: { "@type": "ItemList", numberOfItems: products.length,
+          itemListElement: products.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: BASE_URL + productPath(p), name: p.name })) } },
+      breadcrumbLd(crumbs),
+    ],
+  });
+}
+app.get("/shop", h(async (req, res) => {
+  // ?category=ID links from older pages → the category's own address
   const catId = intIn(req.query.category, 1, 1e9);
   if (catId) {
-    const [[c]] = await pool.query("SELECT name FROM categories WHERE id = ?", [catId]);
-    if (c) { title = `${c.name} — ${STORE.name}`; description = `Shop ${c.name.toLowerCase()} at ${STORE.name}. ${STORE.tagline}`; canonical += `?category=${catId}`; }
+    const [[c]] = await pool.query("SELECT id, slug FROM categories WHERE id = ?", [catId]);
+    if (c && c.slug) { const rest = new URLSearchParams(req.query); rest.delete("category"); return res.redirect(301, categoryPath(c) + (rest.toString() ? "?" + rest : "")); }
   }
-  renderPage(res, "shop.html", { title, description, canonical, image: "/images/hero.jpg" });
+  return renderShop(req, res, null);
+}));
+app.get("/shop/:slug", h(async (req, res) => {
+  const [[c]] = await pool.query("SELECT id, name, slug FROM categories WHERE slug = ?", [req.params.slug]);
+  if (!c) return renderPage(res, "404.html", { title: `Page not found — ${STORE.name}`, status: 404, noindex: true });
+  return renderShop(req, res, c);
 }));
 
 // Old-style product links → permanent redirect to the clean URL (keeps any SEO they earned)
@@ -316,18 +436,34 @@ app.get("/product/:slug", h(async (req, res) => {
   if (!p) return renderPage(res, "404.html", { title: `Page not found — ${STORE.name}`, status: 404, noindex: true });
   const url = BASE_URL + productPath(p);
   const desc = p.meta_description || (p.description || "").slice(0, 155);
+  const [gallery] = await pool.query("SELECT image_url FROM product_images WHERE product_id = ? ORDER BY sort_order", [p.id]);
+  const [[catRow]] = p.category_id ? await pool.query("SELECT id, name, slug FROM categories WHERE id = ?", [p.category_id]) : [[null]];
+  const country = STORE.country || "IN";
   const ld = {
-    "@context": "https://schema.org", "@type": "Product", name: p.name, description: p.description || desc,
-    image: [absUrl(p.image_url)], sku: String(p.id), brand: { "@type": "Brand", name: STORE.name }, category: p.category || undefined,
+    "@context": "https://schema.org", "@type": "Product", name: p.name, description: p.description || desc, url,
+    image: [p.image_url, ...gallery.map((g) => g.image_url)].filter(Boolean).map(absUrl), sku: String(p.id),
+    brand: { "@type": "Brand", name: STORE.name }, category: p.category || undefined,
     offers: { "@type": "Offer", url, priceCurrency: STORE.currency, price: Number(p.price).toFixed(2),
-      availability: p.stock_qty > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", itemCondition: "https://schema.org/NewCondition" },
+      availability: p.stock_qty > 0 ? "https://schema.org/InStock" : "https://schema.org/OutOfStock", itemCondition: "https://schema.org/NewCondition",
+      seller: { "@type": "Organization", name: STORE.name },
+      shippingDetails: { "@type": "OfferShippingDetails",
+        shippingRate: { "@type": "MonetaryAmount", value: Number(p.price) >= STORE.free_shipping_threshold && STORE.free_shipping_threshold > 0 ? 0 : STORE.shipping_flat, currency: STORE.currency },
+        shippingDestination: { "@type": "DefinedRegion", addressCountry: country } },
+      hasMerchantReturnPolicy: { "@type": "MerchantReturnPolicy", applicableCountry: country, returnPolicyCategory: "https://schema.org/MerchantReturnFiniteReturnWindow",
+        merchantReturnDays: STORE.return_days, returnMethod: "https://schema.org/ReturnByMail" } },
   };
   if (p.review_count > 0) ld.aggregateRating = { "@type": "AggregateRating", ratingValue: Number(p.avg_rating), reviewCount: Number(p.review_count) };
-  const crumbs = { "@context": "https://schema.org", "@type": "BreadcrumbList", itemListElement: [
-    { "@type": "ListItem", position: 1, name: "Home", item: BASE_URL + "/" },
-    { "@type": "ListItem", position: 2, name: "Shop", item: BASE_URL + "/shop.html" },
-    { "@type": "ListItem", position: 3, name: p.name, item: url } ] };
-  renderPage(res, "product.html", { title: p.meta_title || `${p.name} — ${STORE.name}`, description: desc, canonical: url, image: p.image_url, type: "product", ld: [ld, crumbs] });
+  const crumbList = [["Home", "/"], ["Shop", "/shop"]];
+  if (catRow) crumbList.push([catRow.name, categoryPath(catRow)]);
+  crumbList.push([p.name, productPath(p)]);
+  const stockText = p.stock_qty <= 0 ? "Out of stock" : p.stock_qty < 10 ? "Low stock" : "In stock";
+  const detail = `<div class="product-detail"><div class="product-images"><div class="product-main-img"><img src="${esc(p.image_url)}"${imgSrcset(p.image_url)} sizes="(max-width: 900px) 92vw, 560px" width="1000" height="1250" alt="${esc(p.name)}" fetchpriority="high" /></div></div>`
+    + `<div class="product-info"><p class="product-category">${catRow ? `<a href="${esc(categoryPath(catRow))}">${esc(catRow.name)}</a>` : ""}</p><h1 class="product-name">${esc(p.name)}</h1><p class="product-price">${esc(money(p.price))}</p>`
+    + `<hr class="product-divider" /><p class="product-desc">${esc(p.description || "")}</p>`
+    + `<div class="product-meta"><div class="product-meta-row"><span class="label">Category</span><span class="value">${esc(p.category || "—")}</span></div><div class="product-meta-row"><span class="label">Availability</span><span class="value">${stockText}</span></div></div></div></div>`;
+  const pTitle = p.meta_title && !/\| ?Aura & Oak$/.test(p.meta_title) ? p.meta_title : `${p.name}${p.category ? " — " + p.category : ""} | Buy Online at ${STORE.name}`;
+  renderPage(res, "product.html", { title: pTitle, description: desc, canonical: url, image: p.image_url, type: "product",
+    fill: { product: detail, crumb: esc(p.name) }, ld: [ld, breadcrumbLd(crumbList)] });
 }));
 
 app.get("/robots.txt", (req, res) => {
@@ -339,16 +475,18 @@ app.get("/robots.txt", (req, res) => {
 });
 
 app.get("/sitemap.xml", h(async (req, res) => {
-  const [products] = await pool.query("SELECT id, slug, updated_at FROM products WHERE is_active = 1");
-  const [cats] = await pool.query("SELECT id FROM categories");
+  const [products] = await pool.query("SELECT id, slug, name, image_url, updated_at FROM products WHERE is_active = 1");
+  const [cats] = await pool.query("SELECT id, slug FROM categories");
+  const newest = products.reduce((m, p) => (p.updated_at && new Date(p.updated_at) > m ? new Date(p.updated_at) : m), new Date(0));
   const urls = [
-    { loc: "/", pr: "1.0" }, { loc: "/shop.html", pr: "0.9" }, { loc: "/contact.html", pr: "0.8" },
-    { loc: "/shipping.html", pr: "0.3" }, { loc: "/returns.html", pr: "0.3" },
-    ...cats.map((c) => ({ loc: `/shop.html?category=${c.id}`, pr: "0.7" })),
-    ...products.map((p) => ({ loc: productPath(p), pr: "0.8", mod: p.updated_at })),
+    { loc: "/", pr: "1.0", mod: newest.getTime() ? newest : null, img: "/images/hero.jpg" }, { loc: "/shop", pr: "0.9", mod: newest.getTime() ? newest : null },
+    { loc: "/contact", pr: "0.7" }, { loc: "/shipping", pr: "0.3" }, { loc: "/returns", pr: "0.3" },
+    ...cats.map((c) => ({ loc: categoryPath(c), pr: "0.8" })),
+    ...products.map((p) => ({ loc: productPath(p), pr: "0.8", mod: p.updated_at, img: p.image_url, title: p.name })),
   ];
-  const body = urls.map((u) => `  <url><loc>${esc(BASE_URL + u.loc)}</loc>${u.mod ? `<lastmod>${new Date(u.mod).toISOString().slice(0, 10)}</lastmod>` : ""}<priority>${u.pr}</priority></url>`).join("\n");
-  res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n${body}\n</urlset>\n`);
+  const body = urls.map((u) => `  <url><loc>${esc(BASE_URL + u.loc)}</loc>${u.mod ? `<lastmod>${new Date(u.mod).toISOString().slice(0, 10)}</lastmod>` : ""}<priority>${u.pr}</priority>`
+    + (u.img ? `<image:image><image:loc>${esc(absUrl(u.img))}</image:loc>${u.title ? `<image:title>${esc(u.title)}</image:title>` : ""}</image:image>` : "") + `</url>`).join("\n");
+  res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
 }));
 
 // Static files (only /public). Clean URLs: /shop → shop.html
@@ -356,7 +494,7 @@ app.use(express.static(PUBLIC_DIR, {
   extensions: ["html"],
   setHeaders(res, file) {
     if (file.endsWith(".html")) res.setHeader("Cache-Control", "no-cache");
-    else if (/[\\/](images|uploads)[\\/]/.test(file)) res.setHeader("Cache-Control", "public, max-age=604800");
+    else if (/[\\/](images|uploads)[\\/]/.test(file)) res.setHeader("Cache-Control", "public, max-age=2592000");
     else res.setHeader("Cache-Control", "public, max-age=3600");
   },
 }));
@@ -370,6 +508,7 @@ app.get("/api/config", (req, res) => {
     stripePublishableKey: stripe ? STRIPE_PUBLISHABLE_KEY || null : null,
     simulated: !stripe,
     store: { ...publicStore, tax_rate },
+    imgVariants: IMG_VARIANTS,
   });
 });
 

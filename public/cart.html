@@ -3,6 +3,11 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#F9F6F0" />
   <title>Cart — Aura & Oak</title>
   <meta name="robots" content="noindex" />
   <meta name="description" content="Review your Aura & Oak cart and check out securely." />
@@ -15,7 +20,7 @@
 
     :root {
       --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055;
-      --primary: #B85A44; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
+      --primary: #A04B37; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
       --radius: 4px; --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
     }
 
@@ -160,13 +165,13 @@
   <!-- NAV -->
   <nav>
     <div class="nav-links">
-      <a href="shop.html">Shop</a>
-      <a href="index.html#story">Our Story</a>
+      <a href="/shop">Shop</a>
+      <a href="/#story">Our Story</a>
     </div>
-    <a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a>
+    <a href="/" class="nav-logo">Aura <span>&</span> Oak</a>
     <div class="nav-actions">
       <span class="nav-account-slot"></span>
-      <a href="shop.html">Continue Shopping</a>
+      <a href="/shop">Continue Shopping</a>
       <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
     </div>
   </nav>
@@ -179,13 +184,13 @@
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
-    <a href="shop.html">Shop</a>
-    <a href="index.html#story">Our Story</a>
+    <a href="/shop">Shop</a>
+    <a href="/#story">Our Story</a>
     <a href="account.html">Account</a>
     <a href="account.html?tab=wishlist">Wishlist</a>
     <a href="cart.html">Cart</a>
-    <a href="shipping.html">Shipping</a>
-    <a href="returns.html">Returns</a>
+    <a href="/shipping">Shipping</a>
+    <a href="/returns">Returns</a>
   </div>
 
   <main>
@@ -212,11 +217,11 @@
   <footer>
     <div class="footer-brand">Aura <span>&</span> Oak</div>
     <div class="footer-links">
-      <a href="index.html">Home</a>
-      <a href="shop.html">Shop</a>
-      <a href="shipping.html">Shipping</a>
-      <a href="returns.html">Returns</a>
-      <a href="contact.html">Contact</a>
+      <a href="/">Home</a>
+      <a href="/shop">Shop</a>
+      <a href="/shipping">Shipping</a>
+      <a href="/returns">Returns</a>
+      <a href="/contact">Contact</a>
     </div>
     <span>&copy; <span data-year>2026</span> Aura &amp; Oak</span>
   </footer>
@@ -239,7 +244,7 @@
           <div class="empty-cart">
             <h2>Your cart is empty</h2>
             <p>Looks like you haven't added anything yet.</p>
-            <a href="shop.html" class="btn-primary">Browse the Shop</a>
+            <a href="/shop" class="btn-primary">Browse the Shop</a>
           </div>`;
         return;
       }
@@ -293,7 +298,7 @@
           </form>
           <p id="promoMsg" style="font-size:12px;margin-top:8px;color:${discount.valid ? '#3F7D4F' : 'var(--primary)'}">${discount.valid ? (discount.free_shipping ? 'Free shipping applied ✓' : 'Code applied ✓') : esc(promoCode ? discount.message : '')}</p>
           <button class="checkout-btn" onclick="location.href='checkout.html'" ${items.some(i => i.quantity > i.stock_qty) ? 'disabled' : ''}>Proceed to Checkout</button>
-          <a href="shop.html" class="continue-link">Continue Shopping</a>
+          <a href="/shop" class="continue-link">Continue Shopping</a>
         </div>`;
 
       layout.innerHTML = itemsHtml + summaryHtml;

@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Account — Aura & Oak</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#F9F6F0" />
+  <title>Account — Aura & Oak</title>
 <meta name="robots" content="noindex" />
 <meta name="description" content="Sign in to your Aura & Oak account to view orders, save addresses, and manage your wishlist." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -13,7 +18,7 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055;
-    --primary: #B85A44; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
+    --primary: #A04B37; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
     --radius: 4px; --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
@@ -75,10 +80,10 @@
 <body>
 
 <nav>
-  <a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a>
+  <a href="/" class="nav-logo">Aura <span>&</span> Oak</a>
   <div class="nav-actions">
-    <a href="shop.html">Shop</a>
-    <a href="contact.html">Contact</a>
+    <a href="/shop">Shop</a>
+    <a href="/contact">Contact</a>
     <a href="cart.html">Cart</a>
   </div>
 </nav>
@@ -217,7 +222,7 @@
     const panel = document.getElementById('panel-orders');
     try {
       const orders = await api('/api/orders');
-      if (!orders.length) { panel.innerHTML = `<p class="empty-note">You haven't placed any orders yet. <a href="shop.html" style="color:var(--primary)">Start shopping →</a></p>`; return; }
+      if (!orders.length) { panel.innerHTML = `<p class="empty-note">You haven't placed any orders yet. <a href="/shop" style="color:var(--primary)">Start shopping →</a></p>`; return; }
       panel.innerHTML = orders.map(o => `
         <div class="order-row">
           <div class="order-row-top"><span>${esc(o.order_number)}</span><span class="order-status">${esc(o.status === 'paid' ? 'confirmed' : o.status)}</span></div>
@@ -291,7 +296,7 @@
             ${p.stock_qty > 0 ? `<button class="link-btn" onclick="wishToCart(${Number(p.product_id)})">Add to cart</button>` : ''}
             <button class="link-btn" style="color:var(--text2)" onclick="removeWish(${Number(p.product_id)})">Remove</button>
           </div>
-        </div>`).join('') : `<p class="empty-note">Nothing saved yet. <a href="shop.html" style="color:var(--primary)">Browse the shop →</a></p>`;
+        </div>`).join('') : `<p class="empty-note">Nothing saved yet. <a href="/shop" style="color:var(--primary)">Browse the shop →</a></p>`;
     } catch { panel.innerHTML = `<p class="empty-note">Could not load wishlist.</p>`; }
   }
   async function wishToCart(productId) {

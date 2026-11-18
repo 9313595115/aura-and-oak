@@ -3,7 +3,12 @@
 <head>
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>Checkout — Aura & Oak</title>
+<link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/favicon.ico" sizes="any" />
+  <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
+  <link rel="manifest" href="/site.webmanifest" />
+  <meta name="theme-color" content="#F9F6F0" />
+  <title>Checkout — Aura & Oak</title>
 <meta name="robots" content="noindex" />
 <meta name="description" content="Secure checkout for your Aura & Oak order." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -14,7 +19,7 @@
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
     --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055;
-    --primary: #B85A44; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
+    --primary: #A04B37; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
     --radius: 4px; --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
   }
   body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
@@ -83,7 +88,7 @@
 <body>
 
 <nav>
-  <a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a>
+  <a href="/" class="nav-logo">Aura <span>&</span> Oak</a>
   <span class="nav-secure">
     <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
     Secure Checkout
@@ -134,7 +139,7 @@
 
     <p class="form-error" id="formError" role="alert"></p>
     <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">Place Order</button>
-    <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">By placing your order you agree to our <a href="shipping.html" style="text-decoration:underline">shipping</a> and <a href="returns.html" style="text-decoration:underline">returns</a> policies.</p>
+    <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">By placing your order you agree to our <a href="/shipping" style="text-decoration:underline">shipping</a> and <a href="/returns" style="text-decoration:underline">returns</a> policies.</p>
   </div>
 
   <div class="order-summary-card">
@@ -285,7 +290,7 @@
     catch { data = { items: [] }; }
 
     if (!data.items.length) {
-      document.getElementById('checkoutWrap').innerHTML = `<div class="empty-note" style="grid-column:1/-1"><h2>Your cart is empty</h2><p style="margin-top:10px"><a href="shop.html" style="color:var(--primary)">Continue shopping →</a></p></div>`;
+      document.getElementById('checkoutWrap').innerHTML = `<div class="empty-note" style="grid-column:1/-1"><h2>Your cart is empty</h2><p style="margin-top:10px"><a href="/shop" style="color:var(--primary)">Continue shopping →</a></p></div>`;
       return;
     }
     if (discountCode && !data.discount.valid) { discountCode = ''; sessionStorage.removeItem('ao_promo'); }
