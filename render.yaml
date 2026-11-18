@@ -1,0 +1,88 @@
+# Render Blueprint for Aura & Oak.
+# In Render: New → Blueprint → pick this repo → Apply.
+# Creates the website plus a private MySQL server, both with persistent disks.
+
+services:
+  # ── MySQL (private, only reachable by the website) ─────────────
+  - type: pserv
+    name: aura-oak-mysql
+    runtime: image
+    image:
+      url: docker.io/library/mysql:8.4
+    plan: starter
+    region: singapore
+    # Data lives in a subfolder so MySQL ignores the disk's lost+found folder
+    dockerCommand: docker-entrypoint.sh mysqld --datadir=/var/lib/mysql/data
+    disk:
+      name: mysql-data
+      mountPath: /var/lib/mysql
+      sizeGB: 1
+    envVars:
+      - key: MYSQL_ROOT_PASSWORD
+        generateValue: true
+      - key: MYSQL_DATABASE
+        value: aura_oak
+
+  # ── Website ─────────────────────────────────────────────────────
+  - type: web
+    name: aura-and-oak
+    runtime: node
+    plan: starter
+    region: singapore
+    buildCommand: npm ci --omit=dev
+    # db:setup is safe to re-run; it creates/upgrades tables, then the store starts
+    startCommand: npm run db:setup && npm start
+    healthCheckPath: /
+    disk:
+      name: uploads
+      mountPath: /opt/render/project/src/public/uploads
+      sizeGB: 1
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: NODE_VERSION
+        value: "20"
+      - key: MYSQL_HOST
+        fromService:
+          type: pserv
+          name: aura-oak-mysql
+          property: host
+      - key: MYSQL_PORT
+        value: "3306"
+      - key: MYSQL_USER
+        value: root
+      - key: MYSQL_PASSWORD
+        fromService:
+          type: pserv
+          name: aura-oak-mysql
+          envVarKey: MYSQL_ROOT_PASSWORD
+      - key: MYSQL_DATABASE
+        value: aura_oak
+      - key: JWT_SECRET
+        generateValue: true
+      - key: ADMIN_JWT_SECRET
+        generateValue: true
+      # Public address, e.g. https://aura-and-oak.onrender.com (or your own domain)
+      - key: BASE_URL
+        sync: false
+      - key: STORE_CURRENCY
+        value: INR
+      - key: STORE_LOCALE
+        value: en-IN
+      - key: STORE_DEFAULT_SHIP_COUNTRY
+        value: India
+      # Your business details — Render asks for these when you apply the Blueprint
+      - key: STORE_EMAIL
+        sync: false
+      - key: STORE_PHONE
+        sync: false
+      - key: STORE_STREET
+        sync: false
+      - key: STORE_CITY
+        sync: false
+      - key: STORE_REGION
+        sync: false
+      - key: STORE_POSTAL_CODE
+        sync: false
+      - key: STORE_COUNTRY
+        value: IN
