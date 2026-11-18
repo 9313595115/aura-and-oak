@@ -1,0 +1,71 @@
+/* ============================================================
+   Aura & Oak — responsive polish, loaded LAST on every page so
+   these rules win over each page's own <style> block.
+   Covers small phones (320px), phones held sideways, tablets
+   and touch screens.
+   ============================================================ */
+
+/* Grid/flex children may shrink below their content width instead of
+   pushing the page sideways on narrow screens */
+.cart-layout, .checkout-layout, .product-detail, .story-inner, .visit-inner { min-width: 0; }
+.cart-layout > *, .cart-item > *, .cart-item-info > *, .product-detail > *, .order-summary > * { min-width: 0; }
+img, video { max-width: 100%; }
+
+/* Cart count: an inline pill next to "Cart" instead of a bubble covering the word */
+.cart-btn { display: inline-flex; align-items: center; gap: 6px; }
+.cart-btn .cart-count, .cart-count {
+  position: static; transform: none; margin: 0;
+  min-width: 18px; height: 18px; padding: 0 5px; border-radius: 9px;
+  font-size: 10px; line-height: 18px; letter-spacing: 0;
+}
+
+/* ── Touch screens: comfortable tap targets (≈44px tall) ── */
+@media (pointer: coarse) {
+  .nav-actions a, .nav-actions .cart-btn, .nav-account-link { min-height: 44px; display: inline-flex; align-items: center; }
+  .hamburger-btn { width: 44px; height: 44px; padding: 10px; }
+  .breadcrumb a { display: inline-flex; align-items: center; min-height: 40px; }
+  .footer-links a, footer li a, .footer-col a { display: inline-flex; align-items: center; min-height: 40px; }
+  .view-cart-link, .continue-link { display: flex; align-items: center; justify-content: center; min-height: 44px; }
+  .forgot-link, .link-btn { min-height: 40px; padding: 8px 0; }
+  .filter-tab { min-height: 40px; }
+  .wishlist-heart { min-width: 44px; min-height: 44px; }
+  .qty-btn { min-width: 40px; min-height: 40px; }
+  .nav-links a { display: inline-flex; align-items: center; min-height: 44px; }
+  .links a, .write-review-btn { display: inline-flex; align-items: center; min-height: 40px; }
+  .product-info a[href="#reviewsSection"] { display: inline-flex; align-items: center; min-height: 40px; }
+}
+
+/* ── Tablets in portrait and phones held sideways: keep the product
+      photo beside the details so price and "Add to Cart" stay on screen ── */
+@media (min-width: 700px) and (max-width: 960px) {
+  .product-detail { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 32px; }
+  .product-images { position: sticky; top: 88px; align-self: start; }
+}
+
+/* Phones held sideways: the full-screen hero would hide everything */
+@media (max-height: 500px) and (orientation: landscape) {
+  .hero { height: auto; min-height: 0; padding: 96px 24px 56px !important; }
+  .hero-title { font-size: clamp(36px, 6vw, 56px); }
+}
+
+/* ── Small phones ── */
+@media (max-width: 400px) {
+  nav { padding-left: 16px !important; padding-right: 12px !important; }
+  .nav-logo { font-size: 19px; }
+  .nav-actions { gap: 12px; }
+  .cart-layout { padding-left: 16px; padding-right: 16px; }
+  .order-summary { padding: 24px 18px; }
+  .product-detail { padding-left: 16px; padding-right: 16px; }
+  .breadcrumb { padding-left: 16px; padding-right: 16px; }
+  .page-header { padding-left: 16px; padding-right: 16px; }
+}
+
+/* Very small phones (320px, e.g. Galaxy Fold folded / iPhone SE 1st gen):
+   logo sits on the left so it never runs into Cart, headline wraps nicely */
+@media (max-width: 360px) {
+  .nav-logo { position: static; transform: none; font-size: 18px; }
+  .hero-title { font-size: 40px; }
+  .hero-content { padding: 0 16px; }
+  form[role="search"] { flex-wrap: wrap; }
+  form[role="search"] > * { flex: 1 1 100%; }
+}
