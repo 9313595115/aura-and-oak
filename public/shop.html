@@ -339,6 +339,7 @@
         const top = Math.ceil(Number(priceRange.max_price) / 5) * 5;
         const slider = document.getElementById('priceRange');
         slider.max = top;
+        slider.step = top > 2000 ? 100 : 5;
         slider.value = top;
         maxPrice = top;
         document.getElementById('priceRangeVal').textContent = top;

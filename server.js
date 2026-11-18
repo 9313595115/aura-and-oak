@@ -57,8 +57,9 @@ const STORE = {
   currency:      (process.env.STORE_CURRENCY || "USD").toUpperCase(),
   locale:        process.env.STORE_LOCALE || "en-US",
   default_country: process.env.STORE_DEFAULT_SHIP_COUNTRY || process.env.STORE_COUNTRY || "United States",
-  shipping_flat: num(process.env.SHIPPING_FLAT_RATE, 12),
-  free_shipping_threshold: num(process.env.FREE_SHIPPING_THRESHOLD, 150),
+  // Defaults suit the currency: ₹149 flat / free over ₹2,999 for INR, 12 / 150 otherwise
+  shipping_flat: num(process.env.SHIPPING_FLAT_RATE, (process.env.STORE_CURRENCY || "").toUpperCase() === "INR" ? 149 : 12),
+  free_shipping_threshold: num(process.env.FREE_SHIPPING_THRESHOLD, (process.env.STORE_CURRENCY || "").toUpperCase() === "INR" ? 2999 : 150),
   tax_rate:      num(process.env.TAX_RATE_PERCENT, 0),
   tax_label:     process.env.TAX_LABEL || "Tax",
   return_days:   num(process.env.RETURN_WINDOW_DAYS, 30),

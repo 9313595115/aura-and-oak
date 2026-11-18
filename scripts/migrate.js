@@ -97,6 +97,21 @@ async function addIndex(conn, table, index, ddl) {
     console.log("Loading sample data (existing rows are left alone)…");
     await conn.query(fs.readFileSync(path.join(__dirname, "..", "database", "seed.sql"), "utf8"));
   }
+
+  // The sample prices are written in dollars. For a rupee store, switch each
+  // sample product to a rupee price — but only while it still has its original
+  // sample price, so prices set in the admin panel are never overwritten.
+  if ((process.env.STORE_CURRENCY || "").toUpperCase() === "INR") {
+    const inr = [
+      ["linen-throw-pillow-set", 68, 2499], ["aged-brass-table-lamp", 189, 6999],
+      ["hand-thrown-ceramic-vase", 95, 3499], ["merino-wool-blanket", 145, 5499],
+      ["reclaimed-oak-side-table", 320, 12999], ["abstract-canvas-print", 210, 7999],
+      ["soy-wax-candle-amber-cedar", 42, 1299], ["jute-area-rug-5x8", 275, 9999],
+    ];
+    for (const [slug, oldPrice, newPrice] of inr)
+      await conn.query("UPDATE products SET price = ? WHERE slug = ? AND price = ?", [newPrice, slug, oldPrice]);
+    await conn.query("UPDATE discount_codes SET min_subtotal = 1499 WHERE code = 'FREESHIP' AND min_subtotal = 75");
+  }
   await conn.end();
   console.log(`\n✓ Database "${DB}" is ready.`);
 })().catch((e) => {
