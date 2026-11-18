@@ -9,6 +9,10 @@
    pushing the page sideways on narrow screens */
 .cart-layout, .checkout-layout, .product-detail, .story-inner, .visit-inner { min-width: 0; }
 .cart-layout > *, .cart-item > *, .cart-item-info > *, .product-detail > *, .order-summary > * { min-width: 0; }
+/* Contact page: long email addresses / links wrap instead of widening the page */
+.contact-wrap > *, .info-row > * { min-width: 0; }
+.info-row a, .info-row span, .info-row p { overflow-wrap: anywhere; }
+@media (max-width: 900px) { .contact-wrap { grid-template-columns: minmax(0, 1fr); } }
 img, video { max-width: 100%; }
 
 /* Cart count: an inline pill next to "Cart" instead of a bubble covering the word */
@@ -58,6 +62,8 @@ img, video { max-width: 100%; }
   .product-detail { padding-left: 16px; padding-right: 16px; }
   .breadcrumb { padding-left: 16px; padding-right: 16px; }
   .page-header { padding-left: 16px; padding-right: 16px; }
+  .contact-wrap { padding-left: 16px; padding-right: 16px; }
+  .info-card, .form-card { padding: 24px 18px; }
 }
 
 /* Very small phones (320px, e.g. Galaxy Fold folded / iPhone SE 1st gen):
