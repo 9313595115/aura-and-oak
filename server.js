@@ -94,6 +94,11 @@ const pool = mysql.createPool({
   waitForConnections: true,
   connectionLimit: 10,
   charset: "utf8mb4",
+  // Hosted MySQL (Aiven, TiDB Cloud…) needs TLS: set MYSQL_SSL=true, and
+  // MYSQL_SSL_CA to the provider's CA certificate if it uses its own.
+  ssl: process.env.MYSQL_SSL === "true"
+    ? (process.env.MYSQL_SSL_CA ? { ca: process.env.MYSQL_SSL_CA.replace(/\\n/g, "\n") } : {})
+    : undefined,
 });
 
 // ── Mail ─────────────────────────────────────────────────────

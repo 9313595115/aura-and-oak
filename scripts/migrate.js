@@ -46,6 +46,11 @@ async function addIndex(conn, table, index, ddl) {
     user: process.env.MYSQL_USER || "root",
     password: process.env.MYSQL_PASSWORD || "",
     multipleStatements: true,
+    // Hosted MySQL (Aiven, TiDB Cloud…) needs TLS: set MYSQL_SSL=true, and
+    // MYSQL_SSL_CA to the provider's CA certificate if it uses its own.
+    ssl: process.env.MYSQL_SSL === "true"
+      ? (process.env.MYSQL_SSL_CA ? { ca: process.env.MYSQL_SSL_CA.replace(/\\n/g, "\n") } : {})
+      : undefined,
   });
   await conn.query(`CREATE DATABASE IF NOT EXISTS \`${DB}\` CHARACTER SET utf8mb4 COLLATE utf8mb4_unicode_ci`);
   await conn.query(`USE \`${DB}\``);
