@@ -1,0 +1,494 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Aura & Oak — Curated Home Decor</title>
+  <meta name="description" content="Thoughtfully curated home decor — linen textiles, hand-thrown ceramics, reclaimed wood furniture, and artisan lighting for a soulful home." />
+  <meta property="og:title" content="Aura & Oak — Curated Home Decor" />
+  <meta property="og:description" content="Thoughtfully curated home decor for spaces that feel intentional, warm, and wholly yours." />
+  <meta property="og:image" content="/images/hero.jpg" />
+  <meta property="og:type" content="website" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="/css/common.css" />
+  <!--SEO-->
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+    :root {
+      --bg:       #F9F6F0;
+      --bg2:      #F2EDE5;
+      --text:     #2A2621;
+      --text2:    #6B6055;
+      --primary:  #B85A44;
+      --brass:    #C5A059;
+      --muted:    #E8E2D9;
+      --white:    #FFFFFF;
+      --radius:   4px;
+      --serif:    'Playfair Display', Georgia, serif;
+      --sans:     'Plus Jakarta Sans', system-ui, sans-serif;
+    }
+
+    html { scroll-behavior: smooth; }
+    body { background: var(--bg); color: var(--text); font-family: var(--sans); font-size: 16px; line-height: 1.6; }
+
+    a { color: inherit; text-decoration: none; }
+    img { display: block; max-width: 100%; }
+    button { cursor: pointer; border: none; background: none; font-family: var(--sans); }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 0 48px; height: 68px;
+      background: rgba(249,246,240,0.92); backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--muted);
+      transition: box-shadow .3s;
+    }
+    nav.scrolled { box-shadow: 0 2px 24px rgba(42,38,33,.08); }
+    .nav-links { display: flex; gap: 32px; font-size: 13px; font-weight: 500; letter-spacing: .08em; text-transform: uppercase; }
+    .nav-links a:hover { color: var(--primary); }
+    .nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: .03em; position: absolute; left: 50%; transform: translateX(-50%); }
+    .nav-logo span { font-style: italic; }
+    .nav-actions { display: flex; align-items: center; gap: 20px; }
+    .nav-actions a { font-size: 13px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+    .cart-btn { position: relative; display: flex; align-items: center; gap: 6px; }
+    .cart-count {
+      position: absolute; top: -8px; right: -10px;
+      background: var(--primary); color: #fff;
+      font-size: 10px; font-weight: 700; width: 18px; height: 18px;
+      border-radius: 50%; display: flex; align-items: center; justify-content: center;
+    }
+
+    /* ── HERO ── */
+    .hero {
+      height: 100vh; min-height: 600px;
+      position: relative; display: flex; align-items: center; justify-content: center;
+      overflow: hidden;
+    }
+    .hero-img {
+      position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover;
+      filter: brightness(.72);
+    }
+    .hero-content {
+      position: relative; z-index: 2; text-align: center; color: var(--white); padding: 0 24px;
+    }
+    .hero-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+      opacity: .85; margin-bottom: 20px;
+    }
+    .hero-title {
+      font-family: var(--serif); font-size: clamp(48px, 8vw, 96px); line-height: 1.0;
+      font-weight: 400; margin-bottom: 28px;
+    }
+    .hero-title em { font-style: italic; color: #E8C9A0; }
+    .hero-sub { font-size: 16px; font-weight: 300; opacity: .82; max-width: 440px; margin: 0 auto 40px; }
+    .btn-primary {
+      display: inline-block; background: var(--primary); color: #fff;
+      padding: 14px 40px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      border-radius: var(--radius); transition: background .2s, transform .15s;
+    }
+    .btn-primary:hover { background: #9e4a36; transform: translateY(-1px); }
+    .btn-outline {
+      display: inline-block; border: 1.5px solid currentColor; color: var(--text);
+      padding: 12px 36px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
+      border-radius: var(--radius); transition: background .2s, color .2s;
+    }
+    .btn-outline:hover { background: var(--text); color: var(--white); }
+
+    /* ── SECTIONS ── */
+    section { padding: 96px 48px; }
+    .section-eyebrow {
+      font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase;
+      color: var(--primary); margin-bottom: 14px;
+    }
+    .section-title {
+      font-family: var(--serif); font-size: clamp(28px, 4vw, 46px);
+      font-weight: 400; line-height: 1.2; margin-bottom: 14px;
+    }
+    .section-sub { color: var(--text2); max-width: 520px; line-height: 1.7; margin-bottom: 48px; }
+    .section-header { display: flex; align-items: flex-end; justify-content: space-between; margin-bottom: 48px; }
+    .section-header .section-sub { margin-bottom: 0; }
+
+    /* ── PRODUCT GRID ── */
+    .product-grid {
+      display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 32px;
+    }
+    .product-card {
+      background: var(--white); border-radius: 6px; overflow: hidden;
+      transition: transform .25s, box-shadow .25s;
+    }
+    .product-card:hover { transform: translateY(-4px); box-shadow: 0 12px 40px rgba(42,38,33,.12); }
+    .product-card-img {
+      position: relative; overflow: hidden; aspect-ratio: 4/5; background: var(--muted);
+    }
+    .product-card-img img { width: 100%; height: 100%; object-fit: cover; transition: transform .4s; }
+    .product-card:hover .product-card-img img { transform: scale(1.04); }
+    .product-card-overlay {
+      position: absolute; inset: 0; background: rgba(42,38,33,.38);
+      display: flex; align-items: center; justify-content: center;
+      opacity: 0; transition: opacity .25s;
+    }
+    .product-card:hover .product-card-overlay { opacity: 1; }
+    .overlay-btn {
+      background: var(--white); color: var(--text);
+      padding: 12px 28px; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+      border-radius: var(--radius); cursor: pointer; margin: 4px;
+      transition: background .2s, color .2s; border: none; font-family: var(--sans);
+    }
+    .overlay-btn:hover { background: var(--primary); color: var(--white); }
+    .overlay-btn.add { background: var(--primary); color: var(--white); }
+    .overlay-btn.add:hover { background: #9e4a36; }
+    .product-card-body { padding: 20px 20px 24px; }
+    .product-card-category { font-size: 11px; color: var(--text2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
+    .product-card-name { font-family: var(--serif); font-size: 18px; font-weight: 500; margin-bottom: 8px; line-height: 1.3; }
+    .product-card-price { color: var(--primary); font-weight: 600; font-size: 17px; }
+
+    /* ── STORY ── */
+    .story { background: var(--bg2); }
+    .story-inner { max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 80px; align-items: center; }
+    .story-img { border-radius: 4px; overflow: hidden; aspect-ratio: 4/5; }
+    .story-img img { width: 100%; height: 100%; object-fit: cover; }
+    .story-text .section-sub { margin-bottom: 32px; }
+
+    /* ── CATEGORIES ── */
+    .categories { background: var(--white); }
+    .category-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; }
+    .category-card {
+      position: relative; aspect-ratio: 3/4; overflow: hidden; border-radius: 4px; cursor: pointer;
+      transition: transform .25s;
+    }
+    .category-card:hover { transform: scale(1.02); }
+    .category-card img { width: 100%; height: 100%; object-fit: cover; filter: brightness(.62); transition: filter .3s; }
+    .category-card:hover img { filter: brightness(.48); }
+    .category-card-label {
+      position: absolute; inset: 0; display: flex; flex-direction: column;
+      align-items: center; justify-content: flex-end; padding: 28px;
+      color: var(--white); text-align: center;
+    }
+    .category-card-label span { font-family: var(--serif); font-size: 22px; font-weight: 500; margin-bottom: 8px; }
+    .category-card-label small { font-size: 11px; letter-spacing: .14em; text-transform: uppercase; opacity: .8; }
+
+    /* ── VISIT ── */
+    .visit { background: var(--bg2); }
+    .visit-inner { max-width: 1100px; margin: 0 auto; }
+    .visit-nap { flex-direction: column; font-size: 15px; gap: 10px; color: var(--text); }
+
+    /* ── NEWSLETTER ── */
+    .newsletter { background: var(--text); color: var(--white); text-align: center; }
+    .newsletter .section-eyebrow { color: var(--brass); }
+    .newsletter .section-title { color: var(--white); max-width: 540px; margin: 0 auto 16px; }
+    .newsletter-sub { color: rgba(255,255,255,.62); max-width: 420px; margin: 0 auto 40px; }
+    .newsletter-form { display: flex; gap: 0; max-width: 440px; margin: 0 auto; border-radius: var(--radius); overflow: hidden; }
+    .newsletter-form input {
+      flex: 1; padding: 14px 20px; background: rgba(255,255,255,.1); border: 1px solid rgba(255,255,255,.18);
+      color: var(--white); font-family: var(--sans); font-size: 14px; outline: none;
+      border-right: none;
+    }
+    .newsletter-form input::placeholder { color: rgba(255,255,255,.45); }
+    .newsletter-form button {
+      padding: 14px 28px; background: var(--primary); color: var(--white);
+      font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
+      cursor: pointer; white-space: nowrap; transition: background .2s;
+    }
+    .newsletter-form button:hover { background: #9e4a36; }
+    .newsletter-msg { font-size: 14px; margin-top: 14px; color: var(--brass); min-height: 20px; }
+
+    /* ── FOOTER ── */
+    footer {
+      background: #1C1915; color: rgba(255,255,255,.55);
+      padding: 64px 48px 32px; font-size: 13px;
+    }
+    .footer-grid { display: grid; grid-template-columns: 2fr 1fr 1fr 1fr; gap: 48px; margin-bottom: 56px; }
+    .footer-brand { font-family: var(--serif); font-size: 24px; font-weight: 600; color: var(--white); margin-bottom: 14px; }
+    .footer-brand span { font-style: italic; }
+    .footer-tagline { color: rgba(255,255,255,.45); line-height: 1.7; max-width: 260px; }
+    .footer-col h4 { color: var(--white); font-size: 11px; font-weight: 600; letter-spacing: .14em; text-transform: uppercase; margin-bottom: 20px; }
+    .footer-col ul { list-style: none; display: flex; flex-direction: column; gap: 10px; }
+    .footer-col ul li a { transition: color .2s; }
+    .footer-col ul li a:hover { color: var(--brass); }
+    .footer-bottom { display: flex; justify-content: space-between; align-items: center; border-top: 1px solid rgba(255,255,255,.08); padding-top: 24px; }
+
+    /* ── SKELETON ── */
+    .skeleton { background: linear-gradient(90deg, var(--muted) 25%, #EDE8E0 50%, var(--muted) 75%); background-size: 200% 100%; animation: shimmer 1.4s infinite; border-radius: var(--radius); }
+    @keyframes shimmer { 0%{background-position:200% 0} 100%{background-position:-200% 0} }
+
+    /* ── TOAST ── */
+    .toast {
+      position: fixed; bottom: 32px; right: 32px; z-index: 999;
+      background: var(--text); color: var(--white);
+      padding: 14px 22px; border-radius: var(--radius); font-size: 14px;
+      transform: translateY(100px); opacity: 0; transition: transform .3s, opacity .3s;
+      pointer-events: none;
+    }
+    .toast.show { transform: translateY(0); opacity: 1; }
+
+    @media (max-width: 900px) {
+      nav { padding: 0 24px; }
+      .nav-links { display: none; }
+      section { padding: 64px 24px; }
+      .story-inner { grid-template-columns: 1fr; gap: 40px; }
+      .category-grid { grid-template-columns: repeat(2, 1fr); }
+      .footer-grid { grid-template-columns: 1fr 1fr; gap: 32px; }
+    }
+    @media (max-width: 540px) {
+      .category-grid { grid-template-columns: 1fr; }
+      .newsletter-form { flex-direction: column; border-radius: 0; }
+      .newsletter-form input { border-right: 1px solid rgba(255,255,255,.18); }
+      .footer-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav id="navbar">
+    <div class="nav-links">
+      <a href="shop.html">Shop</a>
+      <a href="#story">Our Story</a>
+      <a href="contact.html">Visit Us</a>
+    </div>
+    <a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a>
+    <div class="nav-actions">
+      <span class="nav-account-slot"></span>
+      <a href="account.html?tab=wishlist">Wishlist</a>
+      <a href="#" class="cart-btn" id="cartBtn" data-cart-trigger>
+        Cart
+        <span class="cart-count" id="cartCount" style="display:none">0</span>
+      </a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+
+  <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+  <div class="mobile-nav-drawer" id="mobileNavDrawer">
+    <div class="mobile-nav-drawer-header">
+      <span class="drawer-logo">Aura <span>&</span> Oak</span>
+      <button class="drawer-close" id="mobileNavClose" aria-label="Close menu">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+      </button>
+    </div>
+    <a href="shop.html">Shop</a>
+    <a href="index.html#story">Our Story</a>
+    <a href="account.html">Account</a>
+    <a href="account.html?tab=wishlist">Wishlist</a>
+    <a href="cart.html">Cart</a>
+    <a href="shipping.html">Shipping</a>
+    <a href="returns.html">Returns</a>
+  </div>
+
+  <!-- HERO -->
+  <section class="hero" style="padding:0">
+    <img src="images/hero.jpg" alt="A warm living room styled with Aura &amp; Oak linen, ceramics and lighting" class="hero-img" fetchpriority="high" />
+    <div class="hero-content">
+      <p class="hero-eyebrow">The Spring Collection</p>
+      <h1 class="hero-title">Curated for a<br><em>soulful</em> home.</h1>
+      <p class="hero-sub">Thoughtfully chosen pieces for spaces that tell your story.</p>
+      <a href="shop.html" class="btn-primary">Explore the Collection</a>
+    </div>
+  </section>
+
+  <!-- FEATURED PRODUCTS -->
+  <section id="featured">
+    <div style="max-width:1200px;margin:0 auto">
+      <div class="section-header">
+        <div>
+          <p class="section-eyebrow">Handpicked</p>
+          <h2 class="section-title">Featured Pieces</h2>
+          <p class="section-sub">Each item chosen for its craft, material, and quiet beauty.</p>
+        </div>
+        <a href="shop.html" class="btn-outline">View All</a>
+      </div>
+      <div class="product-grid" id="featuredGrid">
+        <!-- skeleton -->
+        <div class="product-card"><div class="product-card-img skeleton" style="aspect-ratio:4/5"></div><div class="product-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:85%;margin-bottom:10px"></div><div class="skeleton" style="height:16px;width:40%"></div></div></div>
+        <div class="product-card"><div class="product-card-img skeleton" style="aspect-ratio:4/5"></div><div class="product-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:85%;margin-bottom:10px"></div><div class="skeleton" style="height:16px;width:40%"></div></div></div>
+        <div class="product-card"><div class="product-card-img skeleton" style="aspect-ratio:4/5"></div><div class="product-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:85%;margin-bottom:10px"></div><div class="skeleton" style="height:16px;width:40%"></div></div></div>
+        <div class="product-card"><div class="product-card-img skeleton" style="aspect-ratio:4/5"></div><div class="product-card-body"><div class="skeleton" style="height:12px;width:60%;margin-bottom:8px"></div><div class="skeleton" style="height:18px;width:85%;margin-bottom:10px"></div><div class="skeleton" style="height:16px;width:40%"></div></div></div>
+      </div>
+    </div>
+  </section>
+
+  <!-- STORY -->
+  <section class="story" id="story">
+    <div class="story-inner">
+      <div class="story-img"><img src="images/story.jpg" alt="Our Story" /></div>
+      <div class="story-text">
+        <p class="section-eyebrow">Our Story</p>
+        <h2 class="section-title">Designed to make your home feel like you.</h2>
+        <p class="section-sub">Aura & Oak was founded with a simple belief — that the objects we live with should carry meaning. We source directly from independent makers and artisans, choosing pieces that age beautifully and tell a story.</p>
+        <p class="section-sub" style="margin-top:-24px">Every item in our collection is held to the same standard: exceptional material, honest craft, and a design that endures beyond seasons.</p>
+        <a href="shop.html" class="btn-outline">Discover Our Collection</a>
+      </div>
+    </div>
+  </section>
+
+  <!-- CATEGORIES -->
+  <section class="categories">
+    <div style="max-width:1200px;margin:0 auto">
+      <p class="section-eyebrow" style="text-align:center">Browse by</p>
+      <h2 class="section-title" style="text-align:center;margin-bottom:48px">Shop by Category</h2>
+      <div class="category-grid" id="categoryGrid">
+        <!-- populated by JS -->
+      </div>
+    </div>
+  </section>
+
+  <!-- VISIT US (local store) -->
+  <section class="visit" id="visit">
+    <div class="visit-inner">
+      <div>
+        <p class="section-eyebrow">Visit the Store</p>
+        <h2 class="section-title">Come see it in person.</h2>
+        <p class="section-sub">Touch the linen, see the glaze up close, and get styling advice from our team. Shop online with free shipping over <span data-money="free_shipping_threshold">$150</span>, or visit us in store.</p>
+        <div class="footer-nap visit-nap" data-store-nap></div>
+        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
+          <a href="contact.html" class="btn-primary">Directions &amp; Hours</a>
+          <a href="contact.html#contactForm" class="btn-outline">Send a Message</a>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- NEWSLETTER -->
+  <section class="newsletter">
+    <p class="section-eyebrow">Stay in Touch</p>
+    <h2 class="section-title">Join the Aura & Oak Circle</h2>
+    <p class="newsletter-sub">New arrivals, exclusive offers, and stories from our makers — delivered thoughtfully.</p>
+    <form class="newsletter-form" id="newsletterForm">
+      <input type="email" placeholder="Your email address" id="newsletterEmail" required />
+      <button type="submit">Subscribe</button>
+    </form>
+    <p class="newsletter-msg" id="newsletterMsg"></p>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="footer-grid">
+      <div>
+        <div class="footer-brand">Aura <span>&</span> Oak</div>
+        <p class="footer-tagline">Curated home decor for spaces that feel intentional, warm, and wholly yours.</p>
+        <div class="footer-nap" data-store-nap style="margin-top:16px;flex-direction:column;gap:6px"></div>
+      </div>
+      <div class="footer-col">
+        <h4>Shop</h4>
+        <ul>
+          <li><a href="shop.html">All Products</a></li>
+          <li><a href="shop.html?sort=newest">New Arrivals</a></li>
+          <li><a href="account.html?tab=wishlist">Wishlist</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Help</h4>
+        <ul>
+          <li><a href="shipping.html">Shipping</a></li>
+          <li><a href="returns.html">Returns</a></li>
+          <li><a href="contact.html">Contact Us</a></li>
+        </ul>
+      </div>
+      <div class="footer-col">
+        <h4>Company</h4>
+        <ul>
+          <li><a href="#story">Our Story</a></li>
+          <li><a href="contact.html">Visit the Store</a></li>
+          <li><a href="account.html">My Account</a></li>
+        </ul>
+      </div>
+    </div>
+    <div class="footer-bottom">
+      <span>&copy; <span data-year>2026</span> Aura &amp; Oak. All rights reserved.</span>
+      <span>Crafted with care.</span>
+    </div>
+  </footer>
+
+  <!-- TOAST -->
+  <div class="toast" id="toast"></div>
+
+  <script src="/js/common.js"></script>
+  <script>
+    function showToast(msg) { showToastGlobal(msg); }
+
+    function productCard(p) {
+      const out = p.stock_qty <= 0, url = productUrl(p);
+      return `
+        <div class="product-card">
+          <div class="product-card-img">
+            <a href="${esc(url)}"><img src="${esc(p.image_url)}" alt="${esc(p.name)}" loading="lazy" /></a>
+            <div class="product-card-overlay">
+              <a class="overlay-btn" href="${esc(url)}">View</a>
+              <button class="overlay-btn add" onclick="addToCart(${Number(p.id)}, '${escJs(p.name)}')" ${out ? 'disabled' : ''}>${out ? 'Out of Stock' : 'Add to Cart'}</button>
+            </div>
+          </div>
+          <div class="product-card-body">
+            <p class="product-card-category">${esc(p.category)}</p>
+            <h3 class="product-card-name"><a href="${esc(url)}">${esc(p.name)}</a></h3>
+            <p class="product-card-price">${fmt(p.price)}</p>
+            <div style="margin-top:6px">${renderStars(p.avg_rating, p.review_count)}</div>
+            <div style="margin-top:6px">${stockBadge(p.stock_qty)}</div>
+          </div>
+        </div>`;
+    }
+
+    async function addToCart(productId, name) {
+      try {
+        await api('/api/cart', {
+          method: 'POST',
+          body: JSON.stringify({ product_id: productId, quantity: 1 })
+        });
+        showToast(`${name} added to cart`);
+        loadCartCount();
+      } catch (e) { showToast(e.message || 'Could not add to cart'); }
+    }
+
+    // ── Load featured products ───────────────────────────────
+    async function loadFeatured() {
+      try {
+        await getConfig();
+        const products = await api('/api/products/featured');
+        const grid = document.getElementById('featuredGrid');
+        grid.innerHTML = products.map(productCard).join('');
+      } catch { document.getElementById('featuredGrid').innerHTML = '<p style="color:var(--text2)">Could not load products.</p>'; }
+    }
+
+    // ── Load categories ──────────────────────────────────────
+    async function loadCategories() {
+      try {
+        const r = await fetch('/api/categories');
+        const cats = await r.json();
+        const grid = document.getElementById('categoryGrid');
+        grid.innerHTML = cats.slice(0,6).map(c => `
+          <a href="shop.html?category=${Number(c.id)}" class="category-card">
+            <img src="${esc(c.image_url)}" alt="${esc(c.name)}" loading="lazy" />
+            <div class="category-card-label">
+              <span>${esc(c.name)}</span>
+              <small>Shop now</small>
+            </div>
+          </a>`).join('');
+      } catch {}
+    }
+
+    // ── Newsletter ───────────────────────────────────────────
+    document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const email = document.getElementById('newsletterEmail').value;
+      const msg   = document.getElementById('newsletterMsg');
+      try {
+        const d = await api('/api/newsletter', { method:'POST', body: JSON.stringify({email}) });
+        msg.textContent = d.message || 'Subscribed!';
+        document.getElementById('newsletterEmail').value = '';
+      } catch (err) { msg.textContent = err.message; }
+    });
+
+    // ── Nav scroll ───────────────────────────────────────────
+    window.addEventListener('scroll', () => {
+      document.getElementById('navbar').classList.toggle('scrolled', window.scrollY > 40);
+    });
+
+    // ── Init ─────────────────────────────────────────────────
+    loadFeatured();
+    loadCategories();
+  </script>
+</body>
+</html>

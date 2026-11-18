@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Your Order — Aura & Oak</title>
+<meta name="robots" content="noindex" />
+<meta name="description" content="Your Aura & Oak order is confirmed." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/css/common.css" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055;
+    --primary: #B85A44; --brass: #C5A059; --muted: #E8E2D9; --white: #FFFFFF;
+    --radius: 4px; --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.6; }
+  a { color: inherit; text-decoration: none; }
+  nav { display: flex; justify-content: center; padding: 24px; border-bottom: 1px solid var(--muted); }
+  .nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+  .nav-logo span { font-style: italic; }
+
+  .wrap { max-width: 640px; margin: 0 auto; padding: 64px 24px 100px; text-align: center; }
+  .check-icon { width: 64px; height: 64px; border-radius: 50%; background: #E9F3EA; color: #3F7D4F; display:flex; align-items:center; justify-content:center; margin: 0 auto 24px; }
+  h1 { font-family: var(--serif); font-size: 30px; font-weight: 500; margin-bottom: 10px; }
+  .sub { color: var(--text2); margin-bottom: 32px; }
+  .order-number-pill { display: inline-block; background: var(--bg2); padding: 8px 18px; border-radius: 100px; font-weight: 700; letter-spacing: .04em; margin-bottom: 40px; }
+
+  .order-card { background: var(--white); border: 1px solid var(--muted); border-radius: 8px; padding: 28px; text-align: left; margin-bottom: 24px; }
+  .order-card h2 { font-family: var(--serif); font-size: 17px; font-weight: 600; margin-bottom: 16px; }
+  .oc-item { display: flex; gap: 12px; padding: 10px 0; border-bottom: 1px solid var(--muted); font-size: 14px; }
+  .oc-item img { width: 48px; height: 60px; object-fit: cover; border-radius: 4px; }
+  .oc-item-info { flex: 1; }
+  .oc-row { display: flex; justify-content: space-between; font-size: 14px; margin-top: 10px; }
+  .oc-row.total { font-weight: 800; font-size: 17px; margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--muted); }
+  .oc-address { font-size: 13px; color: var(--text2); }
+
+  .actions { display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+  .btn-primary, .btn-secondary { padding: 13px 28px; border-radius: var(--radius); font-size: 13px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-secondary { border: 1.5px solid var(--muted); }
+  .lookup-note { margin-top: 40px; font-size: 13px; color: var(--text2); }
+  .status-steps { display:flex; justify-content:space-between; margin: 0 0 28px; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); }
+  .status-steps span.done { color: #3F7D4F; font-weight: 700; }
+  .lookup-form { text-align:left; max-width: 380px; margin: 24px auto 0; }
+  .lookup-form input { width:100%; padding:12px 14px; border:1.5px solid var(--muted); border-radius:4px; margin-bottom:12px; font-size:14px; }
+  .lookup-form label { font-size:12px; font-weight:600; text-transform:uppercase; color:var(--text2); display:block; margin-bottom:6px; }
+</style>
+</head>
+<body>
+
+<nav><a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a></nav>
+
+<div class="wrap" id="confirmWrap">
+  <p style="color:var(--text2)">Loading your order…</p>
+</div>
+
+<script src="/js/common.js"></script>
+<script>
+  const STEPS = ['paid', 'processing', 'shipped', 'completed'];
+
+  function lookupForm(msg) {
+    return `<h1>Find your order</h1>
+      <p class="sub">${esc(msg || 'Enter your order number and the email you used at checkout.')}</p>
+      <form class="lookup-form" onsubmit="event.preventDefault(); location.search = '?order=' + encodeURIComponent(this.o.value.trim()) + '&email=' + encodeURIComponent(this.e.value.trim());">
+        <label for="o">Order number</label><input id="o" name="o" required placeholder="AO-…" />
+        <label for="e">Email</label><input id="e" name="e" type="email" required />
+        <button class="btn-primary" style="width:100%">Look up order</button>
+      </form>`;
+  }
+
+  async function init() {
+    const params = new URLSearchParams(location.search);
+    const orderNumber = params.get('order'), email = params.get('email');
+    const wrap = document.getElementById('confirmWrap');
+    await getConfig();
+
+    if (!orderNumber) { wrap.innerHTML = lookupForm(); return; }
+
+    try {
+      let url = `/api/orders/${encodeURIComponent(orderNumber)}`;
+      if (email) url += `?email=${encodeURIComponent(email)}`;
+      const order = await api(url);
+      const fresh = Date.now() - new Date(order.created_at).getTime() < 15 * 60 * 1000;
+      const stepIdx = STEPS.indexOf(order.status);
+      const cancelled = order.status === 'cancelled';
+
+      wrap.innerHTML = `
+        ${fresh ? `<div class="check-icon"><svg width="30" height="30" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M20 6L9 17l-5-5"/></svg></div>
+        <h1>Thank you for your order!</h1>
+        <p class="sub">A confirmation has been sent to ${esc(order.email)}.</p>` : `<h1>Order details</h1><p class="sub">Placed on ${new Date(order.created_at).toLocaleDateString()}</p>`}
+        <div class="order-number-pill">${esc(order.order_number)}</div>
+
+        ${cancelled ? `<p class="sub" style="color:var(--primary)">This order was cancelled${order.payment_status === 'refunded' ? ' and refunded' : ''}.</p>`
+          : `<div class="status-steps">${STEPS.map((st, i) => `<span class="${i <= stepIdx ? 'done' : ''}">${i <= stepIdx ? '✓ ' : ''}${st === 'paid' ? 'Confirmed' : st}</span>`).join('')}</div>`}
+        ${order.tracking_number ? `<p class="sub">Tracking${order.carrier ? ' (' + esc(order.carrier) + ')' : ''}: <strong>${esc(order.tracking_number)}</strong></p>` : ''}
+
+        <div class="order-card">
+          <h2>Order Summary</h2>
+          ${order.items.map(i => `
+            <div class="oc-item">
+              <img src="${esc(i.image_url)}" alt="${esc(i.name)}" />
+              <div class="oc-item-info"><strong>${esc(i.name)}</strong><br/><span style="color:var(--text2)">Qty ${Number(i.quantity)}</span></div>
+              <div>${fmt(i.price * i.quantity)}</div>
+            </div>`).join('')}
+          <div class="oc-row"><span>Subtotal</span><span>${fmt(order.subtotal)}</span></div>
+          ${Number(order.discount_amount) > 0 ? `<div class="oc-row"><span>Discount${order.discount_code ? ' (' + esc(order.discount_code) + ')' : ''}</span><span>-${fmt(order.discount_amount)}</span></div>` : ''}
+          <div class="oc-row"><span>Shipping</span><span>${Number(order.shipping_amount) === 0 ? 'Free' : fmt(order.shipping_amount)}</span></div>
+          ${Number(order.tax_amount) > 0 ? `<div class="oc-row"><span>${esc(storeInfo().tax_label || 'Tax')}</span><span>${fmt(order.tax_amount)}</span></div>` : ''}
+          <div class="oc-row total"><span>Total</span><span>${fmt(order.total)}</span></div>
+        </div>
+
+        <div class="order-card">
+          <h2>Shipping To</h2>
+          <p class="oc-address">
+            ${esc(order.shipping_full_name)}<br/>
+            ${esc(order.shipping_line1)}${order.shipping_line2 ? ', ' + esc(order.shipping_line2) : ''}<br/>
+            ${esc(order.shipping_city)}, ${esc(order.shipping_state)} ${esc(order.shipping_postal_code)}<br/>
+            ${esc(order.shipping_country)}
+          </p>
+        </div>
+
+        <div class="actions">
+          <a href="shop.html" class="btn-primary">Continue Shopping</a>
+          <a href="account.html" class="btn-secondary">${isLoggedIn() ? 'View Order History' : 'Create an Account'}</a>
+        </div>
+        <p class="lookup-note">Questions about this order? <a href="contact.html" style="text-decoration:underline">Contact us</a> with your order number.</p>
+      `;
+      if (fresh) loadCartCount();
+    } catch (e) {
+      wrap.innerHTML = lookupForm(e.message);
+    }
+  }
+
+  init();
+</script>
+</body>
+</html>

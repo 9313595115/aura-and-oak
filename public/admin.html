@@ -1,0 +1,763 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Admin — Aura & Oak</title>
+<meta name="robots" content="noindex, nofollow" />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F5F3EF; --text: #2A2621; --text2: #6B6055; --primary: #B85A44; --muted: #E3DDD2; --white: #fff; --ok: #3F7D4F;
+    --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); }
+  a { color: inherit; }
+  button { cursor: pointer; border: none; font-family: var(--sans); }
+  input, select, textarea { font-family: var(--sans); }
+
+  #loginScreen { min-height: 100vh; display: flex; align-items: center; justify-content: center; padding: 24px; }
+  .login-card { background: var(--white); border-radius: 10px; padding: 40px 36px; width: 100%; max-width: 380px; box-shadow: 0 10px 40px rgba(0,0,0,.08); }
+  .login-card h1 { font-family: var(--serif); font-size: 24px; margin-bottom: 6px; }
+  .login-card p.sub { color: var(--text2); font-size: 13px; margin-bottom: 24px; }
+  label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text2); display: block; margin-bottom: 6px; }
+  input, select, textarea { width: 100%; padding: 10px 12px; border: 1.5px solid var(--muted); border-radius: 5px; font-size: 14px; margin-bottom: 12px; background: var(--white); }
+  textarea { min-height: 80px; resize: vertical; }
+  .btn-primary { padding: 11px 20px; background: var(--primary); color: #fff; font-size: 12px; font-weight: 700; text-transform: uppercase; letter-spacing: .05em; border-radius: 5px; }
+  .btn-primary.block { width: 100%; padding: 13px; }
+  .btn-secondary { padding: 9px 16px; border: 1.5px solid var(--muted); border-radius: 5px; font-size: 12px; font-weight: 600; background: var(--white); }
+  .form-error { color: var(--primary); font-size: 13px; margin: -4px 0 12px; min-height: 16px; }
+  .hint { font-size: 12px; color: var(--text2); margin: -8px 0 12px; }
+
+  #dashScreen { display: none; }
+  .admin-shell { display: grid; grid-template-columns: 220px 1fr; min-height: 100vh; }
+  .admin-sidebar { background: #211D19; color: #EDE7DE; padding: 28px 18px; display: flex; flex-direction: column; }
+  .admin-sidebar .logo { font-family: var(--serif); font-size: 19px; }
+  .admin-sidebar .logo span { color: var(--primary); font-weight: 700; font-size: 11px; letter-spacing: .1em; text-transform: uppercase; display: block; margin-top: 2px; }
+  .admin-nav { margin-top: 28px; display: flex; flex-direction: column; gap: 3px; }
+  .admin-nav-item { padding: 10px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; opacity: .8; display: flex; justify-content: space-between; align-items: center; background: none; color: inherit; text-align: left; }
+  .admin-nav-item.active { background: rgba(255,255,255,.1); opacity: 1; }
+  .admin-nav-item:hover { opacity: 1; }
+  .nav-badge { background: var(--primary); color: #fff; font-size: 10px; font-weight: 700; border-radius: 100px; padding: 1px 7px; }
+  .side-foot { margin-top: auto; padding-top: 28px; display: flex; flex-direction: column; gap: 10px; font-size: 12px; }
+  .side-foot a, .side-foot button { opacity: .65; background: none; color: inherit; text-align: left; font-size: 12px; text-decoration: none; }
+  .side-foot a:hover, .side-foot button:hover { opacity: 1; }
+
+  .admin-main { padding: 32px 40px 60px; overflow-x: auto; min-width: 0; }
+  .admin-panel { display: none; }
+  .admin-panel.active { display: block; }
+  .admin-panel h1 { font-family: var(--serif); font-size: 26px; font-weight: 500; margin-bottom: 20px; }
+  .admin-panel h2 { font-family: var(--serif); font-size: 18px; margin: 28px 0 12px; }
+
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 14px; margin-bottom: 8px; }
+  .stat-card { background: var(--white); border-radius: 8px; padding: 18px; border: 1px solid var(--muted); cursor: default; }
+  .stat-card[data-go] { cursor: pointer; }
+  .stat-card[data-go]:hover { border-color: var(--text2); }
+  .stat-card .label { font-size: 11px; color: var(--text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 6px; }
+  .stat-card .value { font-family: var(--serif); font-size: 24px; font-weight: 600; }
+  .stat-card .value.warn { color: var(--primary); }
+  .setup-list { background: #FBF3EF; border: 1px solid #F0DCD3; border-radius: 8px; padding: 16px 20px; margin: 18px 0 0; font-size: 13px; line-height: 1.8; }
+  .setup-list:empty { display: none; }
+
+  table.admin-table { width: 100%; border-collapse: collapse; background: var(--white); border-radius: 8px; overflow: hidden; border: 1px solid var(--muted); }
+  table.admin-table th { text-align: left; font-size: 11px; text-transform: uppercase; letter-spacing: .05em; color: var(--text2); padding: 11px 14px; background: var(--bg); border-bottom: 1px solid var(--muted); white-space: nowrap; }
+  table.admin-table td { padding: 11px 14px; font-size: 13px; border-bottom: 1px solid var(--muted); vertical-align: middle; }
+  table.admin-table tr:last-child td { border-bottom: none; }
+  tr.unread td { font-weight: 600; background: #FFFBF7; }
+  tr.muted td { opacity: .5; }
+  .row-thumb { width: 40px; height: 50px; object-fit: cover; border-radius: 3px; background: var(--muted); }
+  .pill { display: inline-block; padding: 2px 9px; border-radius: 100px; font-size: 11px; font-weight: 700; text-transform: uppercase; background: var(--bg); }
+  .pill.ok { background: #E9F3EA; color: var(--ok); } .pill.warn { background: #FBF0E1; color: #A65B15; } .pill.bad { background: #F7E4DF; color: var(--primary); }
+  .toolbar { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; gap: 10px; flex-wrap: wrap; }
+  .toolbar h1 { margin: 0 !important; }
+  .toolbar .filters { display: flex; gap: 8px; flex-wrap: wrap; }
+  .toolbar input, .toolbar select { margin: 0; width: auto; padding: 8px 10px; font-size: 13px; }
+  .link-btn { font-size: 12px; color: var(--primary); font-weight: 700; text-decoration: underline; background: none; }
+  .link-btn.quiet { color: var(--text2); }
+
+  .modal-overlay { position: fixed; inset: 0; background: rgba(20,17,14,.5); display: none; align-items: center; justify-content: center; z-index: 500; padding: 20px; }
+  .modal-overlay.open { display: flex; }
+  .modal { background: var(--white); border-radius: 10px; padding: 26px; width: 100%; max-width: 560px; max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-family: var(--serif); font-size: 19px; margin-bottom: 16px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 16px; flex-wrap: wrap; }
+  .grid2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .checkbox-row { display: flex; align-items: center; gap: 8px; font-size: 13px; margin-bottom: 10px; }
+  .checkbox-row input { width: auto; margin: 0; }
+  details { border: 1px solid var(--muted); border-radius: 6px; padding: 10px 12px; margin-bottom: 12px; }
+  details summary { cursor: pointer; font-size: 13px; font-weight: 600; }
+  details[open] summary { margin-bottom: 12px; }
+  .img-row { display: flex; gap: 10px; align-items: center; margin-bottom: 12px; }
+  .img-row input { margin: 0; }
+  .img-preview { width: 56px; height: 70px; object-fit: cover; border-radius: 4px; background: var(--muted); flex-shrink: 0; }
+  .gallery-list { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 12px; }
+  .gallery-list .g { position: relative; }
+  .gallery-list img { width: 56px; height: 70px; object-fit: cover; border-radius: 4px; }
+  .gallery-list button { position: absolute; top: -6px; right: -6px; width: 20px; height: 20px; border-radius: 50%; background: var(--text); color: #fff; font-size: 12px; line-height: 20px; }
+  .order-lines div { display: flex; justify-content: space-between; font-size: 13px; padding: 6px 0; border-bottom: 1px solid var(--muted); }
+  .kv { font-size: 13px; color: var(--text2); line-height: 1.7; margin: 10px 0 16px; }
+  .msg-body { white-space: pre-wrap; font-size: 13px; color: var(--text2); max-width: 520px; }
+  .card { background: var(--white); border: 1px solid var(--muted); border-radius: 8px; padding: 22px; max-width: 420px; margin-bottom: 20px; }
+
+  .toast { position: fixed; bottom: 24px; left: 50%; transform: translateX(-50%) translateY(20px); background: #211D19; color: #fff; padding: 12px 22px; border-radius: 6px; font-size: 13px; opacity: 0; pointer-events: none; transition: all .3s; z-index: 900; }
+  .toast.show { opacity: 1; transform: translateX(-50%) translateY(0); }
+  .empty-note { color: var(--text2); font-size: 14px; padding: 30px 0; text-align: center; }
+
+  @media (max-width: 1000px) { .stat-grid { grid-template-columns: repeat(2, 1fr); } }
+  @media (max-width: 800px) {
+    .admin-shell { grid-template-columns: 1fr; }
+    .admin-sidebar { padding: 14px 16px; }
+    .admin-nav { flex-direction: row; flex-wrap: wrap; margin-top: 10px; }
+    .side-foot { flex-direction: row; padding-top: 10px; }
+    .admin-main { padding: 22px 14px 50px; }
+    .grid2 { grid-template-columns: 1fr; }
+  }
+</style>
+</head>
+<body>
+
+<!-- LOGIN -->
+<div id="loginScreen">
+  <form class="login-card" onsubmit="event.preventDefault(); adminLogin();">
+    <h1>Admin Dashboard</h1>
+    <p class="sub">Sign in to manage your store.</p>
+    <label for="adminUsername">Username</label><input type="text" id="adminUsername" autocomplete="username" value="admin" />
+    <label for="adminPassword">Password</label><input type="password" id="adminPassword" autocomplete="current-password" />
+    <p class="form-error" id="loginError" role="alert"></p>
+    <button class="btn-primary block" type="submit">Sign In</button>
+    <p class="hint" style="margin-top:16px">First time? Your admin password is printed in the server log on first start (or set ADMIN_INITIAL_PASSWORD in .env).</p>
+  </form>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashScreen">
+  <div class="admin-shell">
+    <aside class="admin-sidebar">
+      <div class="logo" id="storeName">Aura & Oak <span>Admin</span></div>
+      <nav class="admin-nav">
+        <button class="admin-nav-item active" data-panel="overview">Overview</button>
+        <button class="admin-nav-item" data-panel="orders">Orders <span class="nav-badge" id="badgeOrders" hidden></span></button>
+        <button class="admin-nav-item" data-panel="products">Products</button>
+        <button class="admin-nav-item" data-panel="categories">Categories</button>
+        <button class="admin-nav-item" data-panel="discounts">Promo Codes</button>
+        <button class="admin-nav-item" data-panel="messages">Messages <span class="nav-badge" id="badgeMsgs" hidden></span></button>
+        <button class="admin-nav-item" data-panel="reviews">Reviews</button>
+        <button class="admin-nav-item" data-panel="customers">Customers</button>
+        <button class="admin-nav-item" data-panel="settings">Settings</button>
+      </nav>
+      <div class="side-foot">
+        <a href="/" target="_blank">View store ↗</a>
+        <button onclick="adminLogout()">Sign out</button>
+      </div>
+    </aside>
+
+    <main class="admin-main">
+      <!-- OVERVIEW -->
+      <section class="admin-panel active" id="panel-overview">
+        <h1>Overview</h1>
+        <div class="stat-grid">
+          <div class="stat-card"><div class="label">Revenue (all time)</div><div class="value" id="statRevenue">—</div></div>
+          <div class="stat-card"><div class="label">Revenue (30 days)</div><div class="value" id="statRevenue30">—</div></div>
+          <div class="stat-card" data-go="orders"><div class="label">Orders to ship</div><div class="value" id="statToShip">—</div></div>
+          <div class="stat-card" data-go="orders"><div class="label">Paid orders</div><div class="value" id="statOrders">—</div></div>
+          <div class="stat-card" data-go="products"><div class="label">Low stock</div><div class="value" id="statLowStock">—</div></div>
+          <div class="stat-card" data-go="products"><div class="label">Out of stock</div><div class="value" id="statOutStock">—</div></div>
+          <div class="stat-card" data-go="messages"><div class="label">Unread messages</div><div class="value" id="statMsgs">—</div></div>
+          <div class="stat-card" data-go="customers"><div class="label">Customers · Subscribers</div><div class="value" id="statPeople">—</div></div>
+        </div>
+        <div class="setup-list" id="setupList"></div>
+        <h2>Recent orders</h2>
+        <div id="recentOrdersTable"><p class="empty-note">Loading…</p></div>
+        <h2>Best sellers</h2>
+        <div id="topProducts"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- ORDERS -->
+      <section class="admin-panel" id="panel-orders">
+        <div class="toolbar">
+          <h1>Orders</h1>
+          <div class="filters">
+            <input type="search" id="orderSearch" placeholder="Order #, email, name" />
+            <select id="orderStatusFilter">
+              <option value="">All statuses</option>
+              <option value="paid">Paid (to process)</option><option value="processing">Processing</option>
+              <option value="shipped">Shipped</option><option value="completed">Completed</option>
+              <option value="cancelled">Cancelled</option><option value="pending">Pending</option>
+            </select>
+            <button class="btn-secondary" onclick="exportCsv('orders')">Export CSV</button>
+          </div>
+        </div>
+        <div id="ordersTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- PRODUCTS -->
+      <section class="admin-panel" id="panel-products">
+        <div class="toolbar">
+          <h1>Products</h1>
+          <div class="filters">
+            <input type="search" id="productSearch" placeholder="Search products" />
+            <button class="btn-primary" onclick="openProductModal()">+ Add Product</button>
+          </div>
+        </div>
+        <div id="productsTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- CATEGORIES -->
+      <section class="admin-panel" id="panel-categories">
+        <div class="toolbar"><h1>Categories</h1><button class="btn-primary" onclick="openCategoryModal()">+ Add Category</button></div>
+        <div id="categoriesTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- DISCOUNTS -->
+      <section class="admin-panel" id="panel-discounts">
+        <div class="toolbar"><h1>Promo Codes</h1><button class="btn-primary" onclick="openPromoModal()">+ New Code</button></div>
+        <div id="discountsTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- MESSAGES -->
+      <section class="admin-panel" id="panel-messages">
+        <h1>Messages</h1>
+        <div id="messagesTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- REVIEWS -->
+      <section class="admin-panel" id="panel-reviews">
+        <h1>Reviews</h1>
+        <p class="hint" style="margin:-8px 0 16px">Hide spam or abusive reviews — hidden reviews no longer count toward star ratings.</p>
+        <div id="reviewsTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- CUSTOMERS -->
+      <section class="admin-panel" id="panel-customers">
+        <div class="toolbar">
+          <h1>Customers</h1>
+          <div class="filters">
+            <button class="btn-secondary" onclick="exportCsv('customers')">Export customers</button>
+            <button class="btn-secondary" onclick="exportCsv('subscribers')">Export newsletter list</button>
+          </div>
+        </div>
+        <div id="customersTable"><p class="empty-note">Loading…</p></div>
+      </section>
+
+      <!-- SETTINGS -->
+      <section class="admin-panel" id="panel-settings">
+        <h1>Settings</h1>
+        <form class="card" onsubmit="event.preventDefault(); changePassword();">
+          <h2 style="margin-top:0">Change admin password</h2>
+          <label for="curPass">Current password</label><input type="password" id="curPass" autocomplete="current-password" />
+          <label for="newPass">New password (10+ characters)</label><input type="password" id="newPass" autocomplete="new-password" />
+          <p class="form-error" id="pwError" role="alert"></p>
+          <button class="btn-primary" type="submit">Update Password</button>
+        </form>
+        <div class="card">
+          <h2 style="margin-top:0">Store details</h2>
+          <div class="kv" id="storeDetails"></div>
+          <p class="hint" style="margin:0">Business name, address, hours, currency, shipping and tax are set in the server's <code>.env</code> file — see README → "Your business details". Restart the server after editing.</p>
+        </div>
+      </section>
+    </main>
+  </div>
+</div>
+
+<!-- PRODUCT MODAL -->
+<div class="modal-overlay" id="productModalOverlay">
+  <form class="modal" onsubmit="event.preventDefault(); saveProduct();">
+    <h2 id="productModalTitle">Add Product</h2>
+    <input type="hidden" id="pmId" />
+    <label for="pmName">Name</label><input type="text" id="pmName" required maxlength="255" />
+    <div class="grid2">
+      <div><label for="pmPrice">Price</label><input type="number" step="0.01" min="0.01" id="pmPrice" required /></div>
+      <div><label for="pmStock">Stock quantity</label><input type="number" min="0" id="pmStock" /></div>
+    </div>
+    <label for="pmCategory">Category</label><select id="pmCategory"></select>
+    <label>Main photo</label>
+    <div class="img-row">
+      <img class="img-preview" id="pmImagePreview" alt="" />
+      <div style="flex:1">
+        <input type="text" id="pmImage" placeholder="/images/example.jpg or upload →" />
+        <input type="file" id="pmImageFile" accept="image/png,image/jpeg,image/webp" style="margin-top:6px;border:none;padding:0" />
+      </div>
+    </div>
+    <label>Extra photos (gallery)</label>
+    <div class="gallery-list" id="pmGallery"></div>
+    <input type="file" id="pmGalleryFile" accept="image/png,image/jpeg,image/webp" multiple style="border:none;padding:0" />
+    <label for="pmDescription">Description</label><textarea id="pmDescription" maxlength="10000"></textarea>
+    <div class="checkbox-row"><input type="checkbox" id="pmFeatured" /><label for="pmFeatured" style="margin:0;text-transform:none;font-weight:500">Featured on homepage</label></div>
+    <div class="checkbox-row"><input type="checkbox" id="pmActive" checked /><label for="pmActive" style="margin:0;text-transform:none;font-weight:500">Visible in the store</label></div>
+    <details>
+      <summary>Search engine (SEO) settings</summary>
+      <label for="pmSlug">URL slug</label><input type="text" id="pmSlug" placeholder="auto from name" />
+      <p class="hint">Page address: /product/<b id="pmSlugPreview">…</b></p>
+      <label for="pmMetaTitle">Google title (≈60 characters)</label><input type="text" id="pmMetaTitle" maxlength="255" />
+      <label for="pmMetaDesc">Google description (≈155 characters)</label><textarea id="pmMetaDesc" maxlength="500" style="min-height:60px"></textarea>
+    </details>
+    <p class="form-error" id="pmError" role="alert"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" type="submit" id="pmSave">Save Product</button>
+      <button class="btn-secondary" type="button" onclick="closeModal('productModalOverlay')">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- ORDER MODAL -->
+<div class="modal-overlay" id="orderModalOverlay">
+  <div class="modal">
+    <h2>Order details</h2>
+    <div id="orderModalBody"></div>
+  </div>
+</div>
+
+<!-- PROMO MODAL -->
+<div class="modal-overlay" id="promoModalOverlay">
+  <form class="modal" onsubmit="event.preventDefault(); savePromo();">
+    <h2 id="promoModalTitle">New promo code</h2>
+    <input type="hidden" id="dcId" />
+    <label for="dcCode">Code</label><input type="text" id="dcCode" required placeholder="SUMMER15" style="text-transform:uppercase" />
+    <div class="grid2">
+      <div><label for="dcType">Type</label>
+        <select id="dcType"><option value="percent">% off</option><option value="fixed">Fixed amount off</option><option value="free_shipping">Free shipping</option></select></div>
+      <div><label for="dcValue">Value</label><input type="number" step="0.01" min="0" id="dcValue" /></div>
+      <div><label for="dcMin">Minimum subtotal</label><input type="number" step="0.01" min="0" id="dcMin" value="0" /></div>
+      <div><label for="dcMax">Max uses (blank = unlimited)</label><input type="number" min="0" id="dcMax" /></div>
+    </div>
+    <label for="dcExpires">Expires on (optional)</label><input type="date" id="dcExpires" />
+    <div class="checkbox-row"><input type="checkbox" id="dcActive" checked /><label for="dcActive" style="margin:0;text-transform:none;font-weight:500">Active</label></div>
+    <p class="form-error" id="dcError" role="alert"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" type="submit">Save Code</button>
+      <button class="btn-secondary" type="button" onclick="closeModal('promoModalOverlay')">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<!-- CATEGORY MODAL -->
+<div class="modal-overlay" id="categoryModalOverlay">
+  <form class="modal" onsubmit="event.preventDefault(); saveCategory();">
+    <h2 id="categoryModalTitle">Add category</h2>
+    <input type="hidden" id="ctId" />
+    <label for="ctName">Name</label><input type="text" id="ctName" required maxlength="100" />
+    <label for="ctImage">Image URL</label><input type="text" id="ctImage" placeholder="/images/example.jpg" />
+    <input type="file" id="ctImageFile" accept="image/png,image/jpeg,image/webp" style="border:none;padding:0" />
+    <p class="form-error" id="ctError" role="alert"></p>
+    <div class="modal-actions">
+      <button class="btn-primary" type="submit">Save</button>
+      <button class="btn-secondary" type="button" onclick="closeModal('categoryModalOverlay')">Cancel</button>
+    </div>
+  </form>
+</div>
+
+<div class="toast" id="toast" role="status"></div>
+
+<script>
+  // ── Helpers ────────────────────────────────────────────────
+  const esc = v => String(v ?? '').replace(/[&<>"'`]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;', '`': '&#96;' }[c]));
+  const $ = id => document.getElementById(id);
+  let CFG = { store: {} };
+  function fmt(n) {
+    try { return new Intl.NumberFormat(CFG.store.locale || 'en-US', { style: 'currency', currency: CFG.store.currency || 'USD' }).format(Number(n) || 0); }
+    catch { return '$' + (Number(n) || 0).toFixed(2); }
+  }
+  const dt = d => new Date(d).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' });
+  function getAdminToken() { try { return localStorage.getItem('ao_admin_token'); } catch { return null; } }
+  function setAdminToken(t) { try { localStorage.setItem('ao_admin_token', t); } catch {} }
+  function clearAdminToken() { try { localStorage.removeItem('ao_admin_token'); } catch {} }
+
+  async function adminApi(path, options = {}) {
+    const headers = Object.assign({ 'Content-Type': 'application/json' }, options.headers || {});
+    const token = getAdminToken();
+    if (token) headers['Authorization'] = 'Bearer ' + token;
+    const res = await fetch(path, Object.assign({}, options, { headers }));
+    let data = null;
+    try { data = await res.json(); } catch {}
+    if (res.status === 401 && !path.endsWith('/login')) { clearAdminToken(); showLogin(); throw new Error('Session expired — please sign in again.'); }
+    if (!res.ok) throw new Error((data && data.error) || 'Request failed');
+    return data;
+  }
+  function showToast(msg) {
+    const t = $('toast'); t.textContent = msg; t.classList.add('show');
+    clearTimeout(window.__t); window.__t = setTimeout(() => t.classList.remove('show'), 2800);
+  }
+  function closeModal(id) { $(id).classList.remove('open'); }
+  document.querySelectorAll('.modal-overlay').forEach(o => o.addEventListener('click', e => { if (e.target === o) o.classList.remove('open'); }));
+  document.addEventListener('keydown', e => { if (e.key === 'Escape') document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open')); });
+  const statusPill = s => `<span class="pill ${s === 'completed' || s === 'shipped' ? 'ok' : s === 'cancelled' ? 'bad' : s === 'paid' || s === 'processing' ? 'warn' : ''}">${esc(s)}</span>`;
+
+  // ── Auth / shell ───────────────────────────────────────────
+  function showLogin() { $('loginScreen').style.display = 'flex'; $('dashScreen').style.display = 'none'; }
+  async function showDash() {
+    $('loginScreen').style.display = 'none'; $('dashScreen').style.display = 'block';
+    try { CFG = await (await fetch('/api/config')).json(); } catch {}
+    $('storeName').innerHTML = `${esc(CFG.store.name || 'Store')} <span>Admin</span>`;
+    document.title = `Admin — ${CFG.store.name || 'Store'}`;
+    renderStoreDetails();
+    await loadCategories();
+    const tab = location.hash.slice(1);
+    switchPanel(document.querySelector(`.admin-nav-item[data-panel="${tab}"]`) ? tab : 'overview');
+  }
+  async function adminLogin() {
+    const err = $('loginError'); err.textContent = '';
+    try {
+      const data = await adminApi('/api/admin/login', { method: 'POST', body: JSON.stringify({ username: $('adminUsername').value.trim(), password: $('adminPassword').value }) });
+      setAdminToken(data.token); $('adminPassword').value = ''; showDash();
+    } catch (e) { err.textContent = e.message; }
+  }
+  function adminLogout() { clearAdminToken(); showLogin(); }
+
+  const loaders = { overview: loadOverview, orders: loadOrders, products: loadProducts, categories: renderCategories,
+                    discounts: loadDiscounts, messages: loadMessages, reviews: loadReviews, customers: loadCustomers, settings: () => {} };
+  function switchPanel(name) {
+    document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
+    document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', el.id === 'panel-' + name));
+    history.replaceState(null, '', '#' + name);
+    loaders[name]();
+  }
+  document.querySelectorAll('.admin-nav-item').forEach(b => b.addEventListener('click', () => switchPanel(b.dataset.panel)));
+  document.querySelectorAll('.stat-card[data-go]').forEach(c => c.addEventListener('click', () => switchPanel(c.dataset.go)));
+
+  async function exportCsv(what) {
+    try {
+      const res = await fetch(`/api/admin/export/${what}.csv`, { headers: { Authorization: 'Bearer ' + getAdminToken() } });
+      if (!res.ok) throw new Error('Export failed');
+      const url = URL.createObjectURL(await res.blob());
+      const a = document.createElement('a'); a.href = url; a.download = `${what}-${new Date().toISOString().slice(0, 10)}.csv`; a.click();
+      URL.revokeObjectURL(url);
+    } catch (e) { showToast(e.message); }
+  }
+
+  // ── Overview ───────────────────────────────────────────────
+  async function loadOverview() {
+    try {
+      const s = await adminApi('/api/admin/stats');
+      $('statRevenue').textContent = fmt(s.revenue);
+      $('statRevenue30').textContent = fmt(s.revenue_30d);
+      $('statToShip').textContent = s.to_ship; $('statToShip').classList.toggle('warn', s.to_ship > 0);
+      $('statOrders').textContent = s.order_count;
+      $('statLowStock').textContent = s.low_stock_count; $('statLowStock').classList.toggle('warn', s.low_stock_count > 0);
+      $('statOutStock').textContent = s.out_of_stock_count; $('statOutStock').classList.toggle('warn', s.out_of_stock_count > 0);
+      $('statMsgs').textContent = s.unread_messages; $('statMsgs').classList.toggle('warn', s.unread_messages > 0);
+      $('statPeople').textContent = `${s.customers} · ${s.subscribers}`;
+      setBadge('badgeOrders', s.to_ship); setBadge('badgeMsgs', s.unread_messages);
+      $('topProducts').innerHTML = s.top_products.length ? `<table class="admin-table"><thead><tr><th>Product</th><th>Units</th><th>Sales</th></tr></thead><tbody>
+        ${s.top_products.map(t => `<tr><td>${esc(t.name)}</td><td>${t.units}</td><td>${fmt(t.sales)}</td></tr>`).join('')}</tbody></table>` : '<p class="empty-note">No sales yet.</p>';
+
+      const st = CFG.store, tips = [];
+      if (CFG.simulated) tips.push('💳 <b>Payments are simulated</b> — add Stripe keys to .env before taking real orders.');
+      if (!st.phone || !st.street) tips.push('📍 Add your <b>address and phone</b> in .env so they appear on the site and in Google results.');
+      if (!st.hours_display) tips.push('🕒 Add your <b>opening hours</b> (STORE_HOURS and STORE_HOURS_DISPLAY) in .env.');
+      if (!st.maps_url) tips.push('🗺️ Link your <b>Google Business Profile</b> (STORE_MAPS_URL) — the biggest single boost for local search.');
+      $('setupList').innerHTML = tips.length ? '<b>Finish setting up</b><br/>' + tips.join('<br/>') : '';
+
+      const orders = await adminApi('/api/admin/orders');
+      $('recentOrdersTable').innerHTML = orders.length ? renderOrdersTable(orders.slice(0, 6)) : '<p class="empty-note">No orders yet.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+  function setBadge(id, n) { const b = $(id); b.textContent = n; b.hidden = !n; }
+
+  // ── Orders ─────────────────────────────────────────────────
+  function renderOrdersTable(orders) {
+    return `<table class="admin-table"><thead><tr><th>Order #</th><th>Customer</th><th>Date</th><th>Total</th><th>Payment</th><th>Status</th><th></th></tr></thead><tbody>
+      ${orders.map(o => `<tr>
+        <td><button class="link-btn quiet" style="text-decoration:none;font-weight:600;color:var(--text)" onclick="viewOrder(${Number(o.id)})">${esc(o.order_number)}</button></td>
+        <td>${esc(o.shipping_full_name || '')}<br/><span style="color:var(--text2);font-size:12px">${esc(o.email)}</span></td>
+        <td>${dt(o.created_at)}</td>
+        <td>${fmt(o.total)}</td>
+        <td><span class="pill ${o.payment_status === 'paid' ? 'ok' : o.payment_status === 'refunded' ? 'bad' : ''}">${esc(o.payment_status)}</span>${o.payment_mode === 'simulated' ? ' <span class="pill">test</span>' : ''}</td>
+        <td>${statusPill(o.status)}</td>
+        <td><button class="link-btn" onclick="viewOrder(${Number(o.id)})">Manage</button></td>
+      </tr>`).join('')}</tbody></table>`;
+  }
+  async function loadOrders() {
+    try {
+      const q = new URLSearchParams();
+      if ($('orderSearch').value.trim()) q.set('q', $('orderSearch').value.trim());
+      if ($('orderStatusFilter').value) q.set('status', $('orderStatusFilter').value);
+      const orders = await adminApi('/api/admin/orders?' + q);
+      $('ordersTable').innerHTML = orders.length ? renderOrdersTable(orders) : '<p class="empty-note">No orders match.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+  let orderSearchT; $('orderSearch').addEventListener('input', () => { clearTimeout(orderSearchT); orderSearchT = setTimeout(loadOrders, 300); });
+  $('orderStatusFilter').addEventListener('change', loadOrders);
+
+  async function viewOrder(id) {
+    try {
+      const o = await adminApi(`/api/admin/orders/${id}`);
+      const cancelled = o.status === 'cancelled';
+      $('orderModalBody').innerHTML = `
+        <p><strong>${esc(o.order_number)}</strong> · ${statusPill(o.status)} <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
+        <div class="kv">
+          ${esc(o.email)}${o.shipping_phone ? ' · ' + esc(o.shipping_phone) : ''}<br/>
+          Placed ${new Date(o.created_at).toLocaleString()}<br/>
+          <b>Ship to:</b> ${esc(o.shipping_full_name)}, ${esc(o.shipping_line1)}${o.shipping_line2 ? ', ' + esc(o.shipping_line2) : ''}, ${esc(o.shipping_city)}, ${esc(o.shipping_state)} ${esc(o.shipping_postal_code)}, ${esc(o.shipping_country)}
+        </div>
+        <div class="order-lines">
+          ${o.items.map(i => `<div><span>${esc(i.name)} × ${Number(i.quantity)}</span><span>${fmt(i.price * i.quantity)}</span></div>`).join('')}
+          <div><span>Subtotal</span><span>${fmt(o.subtotal)}</span></div>
+          ${Number(o.discount_amount) > 0 ? `<div><span>Discount (${esc(o.discount_code)})</span><span>-${fmt(o.discount_amount)}</span></div>` : ''}
+          <div><span>Shipping</span><span>${Number(o.shipping_amount) ? fmt(o.shipping_amount) : 'Free'}</span></div>
+          ${Number(o.tax_amount) > 0 ? `<div><span>Tax</span><span>${fmt(o.tax_amount)}</span></div>` : ''}
+          <div style="font-weight:700;border:none"><span>Total</span><span>${fmt(o.total)}</span></div>
+        </div>
+        <h2 style="font-size:16px;margin:20px 0 10px">Fulfilment</h2>
+        <div class="grid2">
+          <div><label for="omStatus">Status</label>
+            <select id="omStatus" ${cancelled ? 'disabled' : ''}>${['pending', 'paid', 'processing', 'shipped', 'completed', 'cancelled'].map(s => `<option value="${s}" ${s === o.status ? 'selected' : ''}>${s}</option>`).join('')}</select></div>
+          <div><label for="omCarrier">Carrier</label><input id="omCarrier" value="${esc(o.carrier || '')}" placeholder="e.g. UPS, Delhivery" /></div>
+        </div>
+        <label for="omTracking">Tracking number</label><input id="omTracking" value="${esc(o.tracking_number || '')}" />
+        <label for="omNote">Internal note (not shown to customer)</label><textarea id="omNote" style="min-height:56px">${esc(o.admin_note || '')}</textarea>
+        <div class="checkbox-row"><input type="checkbox" id="omNotify" checked /><label for="omNotify" style="margin:0;text-transform:none;font-weight:500">Email the customer when marked shipped or cancelled</label></div>
+        <p class="hint">Cancelling puts the items back in stock. Refund the payment separately below.</p>
+        <div class="modal-actions">
+          <button class="btn-primary" onclick="saveOrder(${Number(o.id)})">Save</button>
+          ${o.payment_status === 'paid' ? `<button class="btn-secondary" onclick="refundOrder(${Number(o.id)}, '${o.payment_mode}')">Refund ${fmt(o.total)}</button>` : ''}
+          <button class="btn-secondary" onclick="closeModal('orderModalOverlay')">Close</button>
+        </div>`;
+      $('orderModalOverlay').classList.add('open');
+    } catch (e) { showToast(e.message); }
+  }
+  async function saveOrder(id) {
+    const status = $('omStatus').value;
+    if (status === 'cancelled' && !confirm('Cancel this order? Items will be returned to stock.')) return;
+    try {
+      await adminApi(`/api/admin/orders/${id}`, { method: 'PATCH', body: JSON.stringify({
+        status, carrier: $('omCarrier').value, tracking_number: $('omTracking').value, admin_note: $('omNote').value, notify: $('omNotify').checked }) });
+      showToast('Order updated'); closeModal('orderModalOverlay');
+      loadOrders(); loadOverview();
+    } catch (e) { showToast(e.message); }
+  }
+  async function refundOrder(id, mode) {
+    if (!confirm(mode === 'stripe' ? 'Refund the full amount to the customer\'s card via Stripe?' : 'Mark this test order as refunded?')) return;
+    try { await adminApi(`/api/admin/orders/${id}/refund`, { method: 'POST' }); showToast('Refunded'); viewOrder(id); loadOrders(); }
+    catch (e) { showToast(e.message); }
+  }
+
+  // ── Products ───────────────────────────────────────────────
+  let categoriesCache = [], productsCache = [], pmGallery = [];
+  async function loadCategories() {
+    try {
+      categoriesCache = await (await fetch('/api/categories')).json();
+      $('pmCategory').innerHTML = '<option value="">— none —</option>' + categoriesCache.map(c => `<option value="${Number(c.id)}">${esc(c.name)}</option>`).join('');
+    } catch {}
+  }
+  async function loadProducts() {
+    try { productsCache = await adminApi('/api/admin/products'); renderProducts(); } catch (e) { showToast(e.message); }
+  }
+  function renderProducts() {
+    const q = $('productSearch').value.trim().toLowerCase();
+    const list = productsCache.filter(p => !q || p.name.toLowerCase().includes(q) || (p.category || '').toLowerCase().includes(q));
+    $('productsTable').innerHTML = list.length ? `<table class="admin-table"><thead><tr><th></th><th>Name</th><th>Category</th><th>Price</th><th>Stock</th><th></th></tr></thead><tbody>
+      ${list.map(p => `<tr class="${p.is_active ? '' : 'muted'}">
+        <td><img class="row-thumb" src="${esc(p.image_url)}" alt="" /></td>
+        <td>${esc(p.name)}${p.is_featured ? ' <span style="color:var(--primary);font-size:11px">★ Featured</span>' : ''}${p.is_active ? '' : ' <span class="pill">hidden</span>'}</td>
+        <td>${esc(p.category || '—')}</td>
+        <td>${fmt(p.price)}</td>
+        <td>${p.stock_qty <= 0 ? '<span class="pill bad">Out of stock</span>' : p.stock_qty < 10 ? `<span class="pill warn">${p.stock_qty} left</span>` : p.stock_qty}</td>
+        <td style="white-space:nowrap">
+          <button class="link-btn" onclick="openProductModal(${Number(p.id)})">Edit</button> &nbsp;
+          ${p.slug && p.is_active ? `<a class="link-btn quiet" href="/product/${encodeURIComponent(p.slug)}" target="_blank">View</a> &nbsp;` : ''}
+          <button class="link-btn quiet" onclick="deleteProduct(${Number(p.id)})">Delete</button>
+        </td></tr>`).join('')}</tbody></table>` : '<p class="empty-note">No products found.</p>';
+  }
+  $('productSearch').addEventListener('input', renderProducts);
+
+  function renderGalleryEditor() {
+    $('pmGallery').innerHTML = pmGallery.map((u, i) => `<div class="g"><img src="${esc(u)}" alt="" /><button type="button" aria-label="Remove photo" onclick="pmGallery.splice(${i},1);renderGalleryEditor()">×</button></div>`).join('') || '<span class="hint" style="margin:0">No extra photos yet.</span>';
+  }
+  function openProductModal(id) {
+    const p = id ? productsCache.find(x => x.id === id) : null;
+    $('productModalTitle').textContent = p ? 'Edit Product' : 'Add Product';
+    $('pmId').value = p ? p.id : '';
+    $('pmName').value = p ? p.name : '';
+    $('pmPrice').value = p ? p.price : '';
+    $('pmImage').value = p ? p.image_url || '' : '';
+    $('pmImagePreview').src = p ? p.image_url || '' : '';
+    $('pmStock').value = p ? p.stock_qty : 0;
+    $('pmDescription').value = p ? p.description || '' : '';
+    $('pmFeatured').checked = p ? !!p.is_featured : false;
+    $('pmActive').checked = p ? !!p.is_active : true;
+    $('pmCategory').value = p && p.category_id ? p.category_id : '';
+    $('pmSlug').value = p ? p.slug || '' : '';
+    $('pmMetaTitle').value = p ? p.meta_title || '' : '';
+    $('pmMetaDesc').value = p ? p.meta_description || '' : '';
+    $('pmError').textContent = '';
+    pmGallery = p ? [...(p.gallery || [])] : [];
+    renderGalleryEditor(); updateSlugPreview();
+    $('productModalOverlay').classList.add('open');
+  }
+  const slugify = s => String(s).toLowerCase().normalize('NFKD').replace(/[^\w\s-]/g, '').trim().replace(/[\s_-]+/g, '-');
+  function updateSlugPreview() { $('pmSlugPreview').textContent = slugify($('pmSlug').value || $('pmName').value) || '…'; }
+  $('pmSlug').addEventListener('input', updateSlugPreview); $('pmName').addEventListener('input', updateSlugPreview);
+  $('pmImage').addEventListener('input', () => $('pmImagePreview').src = $('pmImage').value);
+
+  function readFile(file) { return new Promise((ok, fail) => { const r = new FileReader(); r.onload = () => ok(r.result); r.onerror = fail; r.readAsDataURL(file); }); }
+  async function uploadImage(file) {
+    if (file.size > 5 * 1024 * 1024) throw new Error(`${file.name} is over 5 MB — please resize it first.`);
+    const data = await readFile(file);
+    return (await adminApi('/api/admin/uploads', { method: 'POST', body: JSON.stringify({ filename: file.name, data }) })).url;
+  }
+  $('pmImageFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { showToast('Uploading…'); const url = await uploadImage(f); $('pmImage').value = url; $('pmImagePreview').src = url; showToast('Photo uploaded'); }
+    catch (err) { showToast(err.message); } e.target.value = '';
+  });
+  $('pmGalleryFile').addEventListener('change', async e => {
+    for (const f of e.target.files) { try { pmGallery.push(await uploadImage(f)); renderGalleryEditor(); } catch (err) { showToast(err.message); } }
+    e.target.value = '';
+  });
+
+  async function saveProduct() {
+    const id = $('pmId').value;
+    const payload = {
+      name: $('pmName').value.trim(), price: Number($('pmPrice').value), category_id: Number($('pmCategory').value) || null,
+      image_url: $('pmImage').value.trim(), stock_qty: Number($('pmStock').value) || 0, description: $('pmDescription').value.trim(),
+      is_featured: $('pmFeatured').checked, is_active: $('pmActive').checked, gallery: pmGallery,
+      slug: $('pmSlug').value.trim(), meta_title: $('pmMetaTitle').value.trim(), meta_description: $('pmMetaDesc').value.trim(),
+    };
+    $('pmError').textContent = '';
+    try {
+      if (id) await adminApi(`/api/admin/products/${id}`, { method: 'PUT', body: JSON.stringify(payload) });
+      else await adminApi('/api/admin/products', { method: 'POST', body: JSON.stringify(payload) });
+      showToast('Product saved'); closeModal('productModalOverlay'); loadProducts();
+    } catch (e) { $('pmError').textContent = e.message; }
+  }
+  async function deleteProduct(id) {
+    if (!confirm('Delete this product permanently? Tip: untick "Visible in the store" instead to hide it but keep its history.')) return;
+    try { await adminApi(`/api/admin/products/${id}`, { method: 'DELETE' }); showToast('Product deleted'); loadProducts(); }
+    catch (e) { showToast(e.message); }
+  }
+
+  // ── Categories ─────────────────────────────────────────────
+  async function renderCategories() {
+    await loadCategories();
+    $('categoriesTable').innerHTML = categoriesCache.length ? `<table class="admin-table"><thead><tr><th></th><th>Name</th><th>Products</th><th></th></tr></thead><tbody>
+      ${categoriesCache.map(c => `<tr><td><img class="row-thumb" src="${esc(c.image_url)}" alt="" /></td><td>${esc(c.name)}</td><td>${Number(c.product_count)}</td>
+        <td><button class="link-btn" onclick="openCategoryModal(${Number(c.id)})">Edit</button> &nbsp; <button class="link-btn quiet" onclick="deleteCategory(${Number(c.id)})">Delete</button></td></tr>`).join('')}
+      </tbody></table>` : '<p class="empty-note">No categories yet.</p>';
+  }
+  function openCategoryModal(id) {
+    const c = id ? categoriesCache.find(x => x.id === id) : null;
+    $('categoryModalTitle').textContent = c ? 'Edit category' : 'Add category';
+    $('ctId').value = c ? c.id : ''; $('ctName').value = c ? c.name : ''; $('ctImage').value = c ? c.image_url || '' : ''; $('ctError').textContent = '';
+    $('categoryModalOverlay').classList.add('open');
+  }
+  $('ctImageFile').addEventListener('change', async e => {
+    const f = e.target.files[0]; if (!f) return;
+    try { $('ctImage').value = await uploadImage(f); showToast('Image uploaded'); } catch (err) { showToast(err.message); } e.target.value = '';
+  });
+  async function saveCategory() {
+    const id = $('ctId').value, body = JSON.stringify({ name: $('ctName').value.trim(), image_url: $('ctImage').value.trim() });
+    try {
+      await adminApi(id ? `/api/admin/categories/${id}` : '/api/admin/categories', { method: id ? 'PUT' : 'POST', body });
+      showToast('Category saved'); closeModal('categoryModalOverlay'); renderCategories();
+    } catch (e) { $('ctError').textContent = e.message; }
+  }
+  async function deleteCategory(id) {
+    if (!confirm('Delete this category? Its products stay, but become uncategorised.')) return;
+    try { await adminApi(`/api/admin/categories/${id}`, { method: 'DELETE' }); renderCategories(); } catch (e) { showToast(e.message); }
+  }
+
+  // ── Promo codes ────────────────────────────────────────────
+  let discountsCache = [];
+  async function loadDiscounts() {
+    try {
+      discountsCache = await adminApi('/api/admin/discounts');
+      const describe = d => d.type === 'percent' ? `${Number(d.value)}% off` : d.type === 'fixed' ? `${fmt(d.value)} off` : 'Free shipping';
+      $('discountsTable').innerHTML = discountsCache.length ? `<table class="admin-table"><thead><tr><th>Code</th><th>Discount</th><th>Min. order</th><th>Used</th><th>Expires</th><th>Status</th><th></th></tr></thead><tbody>
+        ${discountsCache.map(d => `<tr class="${d.active ? '' : 'muted'}"><td><b>${esc(d.code)}</b></td><td>${describe(d)}</td><td>${Number(d.min_subtotal) ? fmt(d.min_subtotal) : '—'}</td>
+          <td>${Number(d.used_count)}${d.max_uses != null ? ' / ' + Number(d.max_uses) : ''}</td><td>${d.expires_at ? dt(d.expires_at) : '—'}</td>
+          <td>${d.active ? '<span class="pill ok">active</span>' : '<span class="pill">off</span>'}</td>
+          <td><button class="link-btn" onclick="openPromoModal(${Number(d.id)})">Edit</button> &nbsp; <button class="link-btn quiet" onclick="deletePromo(${Number(d.id)})">Delete</button></td></tr>`).join('')}
+        </tbody></table>` : '<p class="empty-note">No promo codes yet.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+  function openPromoModal(id) {
+    const d = id ? discountsCache.find(x => x.id === id) : null;
+    $('promoModalTitle').textContent = d ? 'Edit promo code' : 'New promo code';
+    $('dcId').value = d ? d.id : ''; $('dcCode').value = d ? d.code : ''; $('dcType').value = d ? d.type : 'percent';
+    $('dcValue').value = d ? Number(d.value) : ''; $('dcMin').value = d ? Number(d.min_subtotal) : 0;
+    $('dcMax').value = d && d.max_uses != null ? d.max_uses : ''; $('dcExpires').value = d && d.expires_at ? String(d.expires_at).slice(0, 10) : '';
+    $('dcActive').checked = d ? !!d.active : true; $('dcError').textContent = '';
+    $('dcValue').disabled = $('dcType').value === 'free_shipping';
+    $('promoModalOverlay').classList.add('open');
+  }
+  $('dcType').addEventListener('change', () => { $('dcValue').disabled = $('dcType').value === 'free_shipping'; });
+  async function savePromo() {
+    const id = $('dcId').value;
+    const body = JSON.stringify({ code: $('dcCode').value, type: $('dcType').value, value: $('dcValue').value || 0, min_subtotal: $('dcMin').value || 0,
+      max_uses: $('dcMax').value, expires_at: $('dcExpires').value, active: $('dcActive').checked });
+    try {
+      await adminApi(id ? `/api/admin/discounts/${id}` : '/api/admin/discounts', { method: id ? 'PUT' : 'POST', body });
+      showToast('Promo code saved'); closeModal('promoModalOverlay'); loadDiscounts();
+    } catch (e) { $('dcError').textContent = e.message; }
+  }
+  async function deletePromo(id) {
+    if (!confirm('Delete this promo code?')) return;
+    try { await adminApi(`/api/admin/discounts/${id}`, { method: 'DELETE' }); loadDiscounts(); } catch (e) { showToast(e.message); }
+  }
+
+  // ── Messages ───────────────────────────────────────────────
+  async function loadMessages() {
+    try {
+      const msgs = await adminApi('/api/admin/messages');
+      setBadge('badgeMsgs', msgs.filter(m => !m.is_read).length);
+      $('messagesTable').innerHTML = msgs.length ? `<table class="admin-table"><thead><tr><th>From</th><th>Message</th><th>Received</th><th></th></tr></thead><tbody>
+        ${msgs.map(m => `<tr class="${m.is_read ? '' : 'unread'}">
+          <td style="white-space:nowrap">${esc(m.name)}<br/><a href="mailto:${esc(m.email)}?subject=${encodeURIComponent('Re: ' + (m.subject || 'Your message'))}" style="font-size:12px;color:var(--primary)">${esc(m.email)}</a>${m.phone ? `<br/><a href="tel:${esc(m.phone)}" style="font-size:12px">${esc(m.phone)}</a>` : ''}</td>
+          <td>${m.subject ? `<b>${esc(m.subject)}</b><br/>` : ''}<div class="msg-body">${esc(m.message)}</div></td>
+          <td style="white-space:nowrap">${dt(m.created_at)}</td>
+          <td style="white-space:nowrap"><button class="link-btn" onclick="markMessage(${Number(m.id)}, ${m.is_read ? 0 : 1})">${m.is_read ? 'Mark unread' : 'Mark read'}</button> &nbsp;
+            <button class="link-btn quiet" onclick="deleteMessage(${Number(m.id)})">Delete</button></td></tr>`).join('')}
+        </tbody></table>` : '<p class="empty-note">No messages yet. They arrive from the Contact page.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+  async function markMessage(id, read) { try { await adminApi(`/api/admin/messages/${id}`, { method: 'PATCH', body: JSON.stringify({ is_read: read }) }); loadMessages(); } catch (e) { showToast(e.message); } }
+  async function deleteMessage(id) { if (!confirm('Delete this message?')) return; try { await adminApi(`/api/admin/messages/${id}`, { method: 'DELETE' }); loadMessages(); } catch (e) { showToast(e.message); } }
+
+  // ── Reviews ────────────────────────────────────────────────
+  async function loadReviews() {
+    try {
+      const rs = await adminApi('/api/admin/reviews');
+      $('reviewsTable').innerHTML = rs.length ? `<table class="admin-table"><thead><tr><th>Product</th><th>Rating</th><th>Review</th><th>Date</th><th></th></tr></thead><tbody>
+        ${rs.map(r => `<tr class="${r.is_hidden ? 'muted' : ''}"><td>${esc(r.product_name)}</td><td style="color:#C5A059;white-space:nowrap">${'★'.repeat(r.rating)}</td>
+          <td><b>${esc(r.name)}</b>${r.verified ? ' <span class="pill ok">verified</span>' : ''}<div class="msg-body">${esc(r.comment)}</div></td><td style="white-space:nowrap">${dt(r.created_at)}</td>
+          <td style="white-space:nowrap"><button class="link-btn" onclick="hideReview(${Number(r.id)}, ${r.is_hidden ? 0 : 1})">${r.is_hidden ? 'Show' : 'Hide'}</button> &nbsp;
+            <button class="link-btn quiet" onclick="deleteReview(${Number(r.id)})">Delete</button></td></tr>`).join('')}
+        </tbody></table>` : '<p class="empty-note">No reviews yet.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+  async function hideReview(id, hidden) { try { await adminApi(`/api/admin/reviews/${id}`, { method: 'PATCH', body: JSON.stringify({ is_hidden: hidden }) }); loadReviews(); } catch (e) { showToast(e.message); } }
+  async function deleteReview(id) { if (!confirm('Delete this review permanently?')) return; try { await adminApi(`/api/admin/reviews/${id}`, { method: 'DELETE' }); loadReviews(); } catch (e) { showToast(e.message); } }
+
+  // ── Customers ──────────────────────────────────────────────
+  async function loadCustomers() {
+    try {
+      const cs = await adminApi('/api/admin/customers');
+      $('customersTable').innerHTML = cs.length ? `<table class="admin-table"><thead><tr><th>Name</th><th>Email</th><th>Joined</th><th>Orders</th><th>Spent</th></tr></thead><tbody>
+        ${cs.map(c => `<tr><td>${esc(c.name)}</td><td><a href="mailto:${esc(c.email)}">${esc(c.email)}</a></td><td>${dt(c.created_at)}</td><td>${Number(c.orders)}</td><td>${fmt(c.spent)}</td></tr>`).join('')}
+        </tbody></table>` : '<p class="empty-note">No customer accounts yet.</p>';
+    } catch (e) { showToast(e.message); }
+  }
+
+  // ── Settings ───────────────────────────────────────────────
+  function renderStoreDetails() {
+    const s = CFG.store;
+    $('storeDetails').innerHTML = [
+      ['Name', s.name], ['Phone', s.phone], ['Email', s.email],
+      ['Address', [s.street, s.city, s.region, s.postal_code, s.country].filter(Boolean).join(', ')], ['Hours', s.hours_display],
+      ['Currency', s.currency], ['Shipping', `${fmt(s.shipping_flat)} · free over ${fmt(s.free_shipping_threshold)}`],
+      ['Tax', s.tax_rate ? `${s.tax_rate}% ${s.tax_label}` : 'none'], ['Payments', CFG.simulated ? 'Simulated (test mode)' : 'Stripe (live)'],
+    ].map(([k, v]) => `<b>${k}:</b> ${esc(v || '— not set —')}`).join('<br/>');
+  }
+  async function changePassword() {
+    const err = $('pwError'); err.textContent = '';
+    try {
+      await adminApi('/api/admin/change-password', { method: 'POST', body: JSON.stringify({ current_password: $('curPass').value, new_password: $('newPass').value }) });
+      showToast('Password updated'); $('curPass').value = ''; $('newPass').value = '';
+    } catch (e) { err.textContent = e.message; }
+  }
+
+  if (getAdminToken()) showDash(); else showLogin();
+</script>
+</body>
+</html>

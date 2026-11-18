@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Contact & Visit Us — Aura & Oak</title>
+<meta name="description" content="Visit the Aura & Oak store or get in touch — address, opening hours, phone, and directions." />
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+<link rel="stylesheet" href="/css/common.css" />
+<!--SEO-->
+<style>
+  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+  :root {
+    --bg: #F9F6F0; --bg2: #F2EDE5; --text: #2A2621; --text2: #6B6055; --primary: #B85A44; --muted: #E8E2D9; --white: #fff;
+    --serif: 'Playfair Display', Georgia, serif; --sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  }
+  body { background: var(--bg); color: var(--text); font-family: var(--sans); line-height: 1.65; }
+  a { color: inherit; text-decoration: none; }
+  nav {
+    position: sticky; top: 0; z-index: 100; display: flex; align-items: center; justify-content: space-between;
+    padding: 0 48px; height: 68px; background: rgba(249,246,240,0.96); backdrop-filter: blur(12px); border-bottom: 1px solid var(--muted);
+  }
+  .nav-logo { font-family: var(--serif); font-size: 22px; font-weight: 600; }
+  .nav-logo span { font-style: italic; }
+  .nav-actions { display: flex; gap: 20px; align-items: center; font-size: 13px; font-weight: 500; letter-spacing: .06em; text-transform: uppercase; }
+  .cart-btn { position: relative; }
+  .cart-count { position: absolute; top: -8px; right: -12px; background: var(--primary); color: #fff; font-size: 10px; font-weight: 700; width: 18px; height: 18px; border-radius: 50%; display: flex; align-items: center; justify-content: center; }
+
+  .page-header { background: var(--bg2); padding: 64px 48px 48px; text-align: center; border-bottom: 1px solid var(--muted); }
+  .eyebrow { font-size: 11px; font-weight: 600; letter-spacing: .22em; text-transform: uppercase; color: var(--primary); margin-bottom: 12px; }
+  .page-header h1 { font-family: var(--serif); font-size: clamp(34px, 5vw, 54px); font-weight: 400; margin-bottom: 12px; }
+  .page-header p { color: var(--text2); max-width: 520px; margin: 0 auto; }
+
+  .contact-wrap { max-width: 1140px; margin: 0 auto; padding: 56px 48px 96px; display: grid; grid-template-columns: 1fr 1.1fr; gap: 56px; align-items: start; }
+  .info-card { background: var(--white); border: 1px solid var(--muted); border-radius: 8px; padding: 32px; }
+  .info-card h2, .form-card h2 { font-family: var(--serif); font-size: 22px; font-weight: 500; margin-bottom: 20px; }
+  .info-row { display: flex; gap: 14px; padding: 14px 0; border-bottom: 1px solid var(--muted); font-size: 15px; }
+  .info-row:last-of-type { border-bottom: none; }
+  .info-row .k { min-width: 84px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; color: var(--text2); padding-top: 2px; }
+  .info-row a { text-decoration: underline; text-underline-offset: 3px; }
+  .map { margin-top: 24px; border-radius: 8px; overflow: hidden; aspect-ratio: 4/3; background: var(--muted); }
+  .map iframe { width: 100%; height: 100%; border: 0; }
+  .quick { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 20px; }
+  .quick a { flex: 1; min-width: 120px; text-align: center; padding: 11px 14px; border: 1.5px solid var(--muted); border-radius: 4px; font-size: 12px; font-weight: 600; letter-spacing: .06em; text-transform: uppercase; }
+  .quick a:hover { border-color: var(--text); }
+
+  .form-card { background: var(--white); border: 1px solid var(--muted); border-radius: 8px; padding: 32px; }
+  label { font-size: 12px; font-weight: 600; text-transform: uppercase; letter-spacing: .04em; color: var(--text2); display: block; margin-bottom: 6px; }
+  input, textarea, select { width: 100%; padding: 12px 14px; border: 1.5px solid var(--muted); border-radius: 4px; font-family: var(--sans); font-size: 14px; margin-bottom: 14px; background: var(--white); color: var(--text); }
+  input:focus, textarea:focus, select:focus { outline: none; border-color: var(--primary); }
+  textarea { min-height: 140px; resize: vertical; }
+  .row2 { display: grid; grid-template-columns: 1fr 1fr; gap: 0 12px; }
+  .hp { position: absolute; left: -9999px; }
+  .form-msg { font-size: 14px; margin: 4px 0 12px; min-height: 20px; }
+  .form-msg.ok { color: #3F7D4F; } .form-msg.err { color: var(--primary); }
+
+  footer { background: #1C1915; color: rgba(255,255,255,.6); padding: 40px 48px; font-size: 13px; display: flex; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
+  .footer-brand { font-family: var(--serif); font-size: 20px; color: #fff; }
+  .footer-brand span { font-style: italic; }
+  .footer-links { display: flex; gap: 22px; flex-wrap: wrap; }
+
+  @media (max-width: 900px) {
+    nav { padding: 0 20px; }
+    .page-header { padding: 48px 24px 36px; }
+    .contact-wrap { grid-template-columns: 1fr; padding: 36px 20px 72px; gap: 32px; }
+    .row2 { grid-template-columns: 1fr; }
+    footer { padding: 32px 24px; flex-direction: column; text-align: center; align-items: center; }
+  }
+</style>
+</head>
+<body>
+
+<nav>
+  <a href="index.html" class="nav-logo">Aura <span>&</span> Oak</a>
+  <div class="nav-actions">
+    <span class="nav-account-slot"></span>
+    <a href="shop.html">Shop</a>
+    <a href="#" class="cart-btn" data-cart-trigger>Cart <span class="cart-count" id="cartCount" style="display:none">0</span></a>
+    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+  </div>
+</nav>
+
+<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+<div class="mobile-nav-drawer" id="mobileNavDrawer">
+  <div class="mobile-nav-drawer-header">
+    <span class="drawer-logo">Aura <span>&</span> Oak</span>
+    <button class="drawer-close" id="mobileNavClose" aria-label="Close menu">
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
+    </button>
+  </div>
+  <a href="shop.html">Shop</a>
+  <a href="index.html#story">Our Story</a>
+  <a href="contact.html">Contact &amp; Visit</a>
+  <a href="account.html">Account</a>
+  <a href="cart.html">Cart</a>
+  <a href="shipping.html">Shipping</a>
+  <a href="returns.html">Returns</a>
+</div>
+
+<header class="page-header">
+  <p class="eyebrow">Say Hello</p>
+  <h1>Contact &amp; Visit Us</h1>
+  <p>Questions about a piece, an order, or styling your space? Drop by the store or send us a note — a real person will reply.</p>
+</header>
+
+<main class="contact-wrap">
+  <section class="info-card" aria-labelledby="visitHeading">
+    <h2 id="visitHeading">Visit <span data-store="name">Aura &amp; Oak</span></h2>
+    <div id="infoRows"><p style="color:var(--text2)">Loading store details…</p></div>
+    <div class="quick" id="quickLinks"></div>
+    <div class="map" id="mapWrap" hidden></div>
+  </section>
+
+  <section class="form-card" aria-labelledby="formHeading">
+    <h2 id="formHeading">Send us a message</h2>
+    <form id="contactForm" novalidate>
+      <div class="row2">
+        <div><label for="cName">Your name</label><input id="cName" name="name" autocomplete="name" required maxlength="120" /></div>
+        <div><label for="cEmail">Email</label><input id="cEmail" name="email" type="email" autocomplete="email" required maxlength="255" /></div>
+      </div>
+      <div class="row2">
+        <div><label for="cPhone">Phone (optional)</label><input id="cPhone" name="phone" type="tel" autocomplete="tel" maxlength="40" /></div>
+        <div><label for="cSubject">Topic</label>
+          <select id="cSubject" name="subject">
+            <option>Product question</option>
+            <option>An existing order</option>
+            <option>Returns &amp; exchanges</option>
+            <option>Styling / custom request</option>
+            <option>Something else</option>
+          </select></div>
+      </div>
+      <label for="cMessage">Message</label>
+      <textarea id="cMessage" name="message" required maxlength="5000"></textarea>
+      <div class="hp" aria-hidden="true"><label for="cWebsite">Leave this empty</label><input id="cWebsite" name="website" tabindex="-1" autocomplete="off" /></div>
+      <p class="form-msg" id="formMsg" role="status"></p>
+      <button class="btn-primary" type="submit" style="width:100%" id="sendBtn">Send Message</button>
+    </form>
+  </section>
+</main>
+
+<footer>
+  <div class="footer-brand">Aura <span>&</span> Oak</div>
+  <div class="footer-links">
+    <a href="index.html">Home</a><a href="shop.html">Shop</a><a href="shipping.html">Shipping</a><a href="returns.html">Returns</a>
+  </div>
+  <span>&copy; <span data-year>2026</span> Aura &amp; Oak</span>
+</footer>
+
+<div class="toast" id="toast"></div>
+<script src="/js/common.js"></script>
+<script>
+  async function init() {
+    const cfg = await getConfig();
+    const s = cfg.store || {};
+    const addr = [s.street, [s.city, s.region].filter(Boolean).join(', '), s.postal_code].filter(Boolean).join(', ');
+    const tel = (s.phone || '').replace(/[^\d+]/g, '');
+    const rows = [
+      addr && ['Address', esc(addr)],
+      s.hours_display && ['Hours', esc(s.hours_display)],
+      s.phone && ['Phone', `<a href="tel:${esc(tel)}">${esc(s.phone)}</a>`],
+      s.email && ['Email', `<a href="mailto:${esc(s.email)}">${esc(s.email)}</a>`],
+      s.instagram && ['Instagram', `<a href="${esc(s.instagram)}" target="_blank" rel="noopener">Follow us</a>`],
+    ].filter(Boolean);
+    document.getElementById('infoRows').innerHTML = rows.length
+      ? rows.map(([k, v]) => `<div class="info-row"><span class="k">${k}</span><span>${v}</span></div>`).join('')
+      : '<p style="color:var(--text2)">Use the form and we\'ll get back to you soon.</p>';
+
+    const directions = s.maps_url || (addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((s.name || '') + ' ' + addr)}` : '');
+    document.getElementById('quickLinks').innerHTML = [
+      directions && `<a href="${esc(directions)}" target="_blank" rel="noopener">Get Directions</a>`,
+      s.phone && `<a href="tel:${esc(tel)}">Call Us</a>`,
+      s.whatsapp && `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>`,
+    ].filter(Boolean).join('');
+
+    if (addr) {
+      const q = s.latitude && s.longitude ? `${s.latitude},${s.longitude}` : `${s.name || ''} ${addr} ${s.country || ''}`;
+      const map = document.getElementById('mapWrap');
+      map.innerHTML = `<iframe title="Map showing our store location" loading="lazy" referrerpolicy="no-referrer-when-downgrade" src="https://maps.google.com/maps?q=${encodeURIComponent(q)}&z=15&output=embed"></iframe>`;
+      map.hidden = false;
+    }
+
+    const u = getUser();
+    if (u) { document.getElementById('cName').value = u.name; document.getElementById('cEmail').value = u.email; }
+    const topic = new URLSearchParams(location.search).get('topic');
+    if (topic === 'order') document.getElementById('cSubject').value = 'An existing order';
+  }
+
+  document.getElementById('contactForm').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const f = e.target, msg = document.getElementById('formMsg'), btn = document.getElementById('sendBtn');
+    msg.className = 'form-msg'; msg.textContent = '';
+    const body = Object.fromEntries(new FormData(f).entries());
+    if (!body.name.trim() || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(body.email.trim()) || body.message.trim().length < 5) {
+      msg.className = 'form-msg err'; msg.textContent = 'Please add your name, a valid email, and a short message.'; return;
+    }
+    btn.disabled = true; btn.textContent = 'Sending…';
+    try {
+      const r = await api('/api/contact', { method: 'POST', body: JSON.stringify(body) });
+      msg.className = 'form-msg ok'; msg.textContent = r.message;
+      f.reset(); init();
+    } catch (err) { msg.className = 'form-msg err'; msg.textContent = err.message; }
+    btn.disabled = false; btn.textContent = 'Send Message';
+  });
+
+  init();
+</script>
+</body>
+</html>

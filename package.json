@@ -1,0 +1,26 @@
+{
+  "name": "aura-and-oak",
+  "version": "3.0.0",
+  "description": "Aura & Oak — online store for a local home decor business",
+  "main": "server.js",
+  "private": true,
+  "engines": { "node": ">=18" },
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node --watch server.js",
+    "db:setup": "node scripts/migrate.js",
+    "hash-password": "node scripts/hash-password.js"
+  },
+  "dependencies": {
+    "bcryptjs": "^2.4.3",
+    "compression": "^1.7.4",
+    "dotenv": "^16.4.5",
+    "express": "^4.21.2",
+    "express-rate-limit": "^7.4.1",
+    "helmet": "^8.0.0",
+    "jsonwebtoken": "^9.0.2",
+    "mysql2": "^3.11.5",
+    "nodemailer": "^6.9.16",
+    "stripe": "^17.4.0"
+  }
+}
