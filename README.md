@@ -1,6 +1,6 @@
-# Aura & Oak — Online Store (v3)
+# Eagle CNC Art & Craft — Online Store (v3)
 
-A complete website for a local home-decor business: storefront, product pages
+A complete website for a CNC art & craft workshop: storefront, product pages
 that rank in Google, customer accounts, cart, checkout (Stripe or test mode),
 order emails, a Contact & Visit page with map and hours, and an admin dashboard
 to run orders, products, promo codes, messages and reviews.
@@ -33,8 +33,9 @@ public/                EVERYTHING the browser can see (and nothing else)
 ## Setup (about 10 minutes)
 
 1. **Install Node.js 18+** and **MySQL 8 or MariaDB 10.6+**.
-2. **Copy your photos** into `public/images/` (hero.jpg, story.jpg, pillow.jpg,
-   lamp.jpg, vase.jpg, blanket.jpg, table.jpg, art.jpg, candle.jpg, rug.jpg).
+2. **Photos** live in `public/images/` (sample product photos are included).
+   Replace them with your own work any time, or upload new ones from the admin
+   panel. Each bundled photo has `name.webp` + `name-sm.webp` copies for speed.
 3. Install and configure:
    ```bash
    npm install
@@ -74,7 +75,7 @@ in the structured data Google reads:
 
 | Setting | Example |
 |---|---|
-| `STORE_NAME`, `STORE_TAGLINE` | Aura & Oak |
+| `STORE_NAME`, `STORE_TAGLINE` | Eagle CNC Art & Craft |
 | `STORE_PHONE`, `STORE_EMAIL`, `STORE_WHATSAPP` | WhatsApp adds a chat button on every page |
 | `STORE_STREET`, `STORE_CITY`, `STORE_REGION`, `STORE_POSTAL_CODE`, `STORE_COUNTRY` | Drives the map and directions |
 | `STORE_HOURS` (for Google) / `STORE_HOURS_DISPLAY` (for people) | `Mo-Sa 10:00-20:00` / `Mon–Sat 10am–8pm` |
@@ -143,7 +144,7 @@ Forgot the admin password? `node scripts/hash-password.js "NewPassword123"` then
 ## Getting found locally (do these after launch)
 
 The site already does the technical part: each page has its own title and
-description, product pages live at clean URLs (`/product/aged-brass-table-lamp`)
+description, product pages live at clean URLs (`/product/carved-mandala-wall-art`)
 with price/stock/rating data for Google, the homepage and Contact page tell
 Google your business type, address, phone, hours and map location, and
 `/sitemap.xml` + `/robots.txt` are generated automatically.

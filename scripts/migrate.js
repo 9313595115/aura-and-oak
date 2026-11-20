@@ -93,24 +93,50 @@ async function addIndex(conn, table, index, ddl) {
   await addColumn(conn, "reviews", "verified", "TINYINT(1) NOT NULL DEFAULT 0");
   await addColumn(conn, "reviews", "is_hidden", "TINYINT(1) NOT NULL DEFAULT 0");
 
+  // ── One-time rebrand: Eagle CNC Art & Craft home-decor samples → Eagle CNC Art & Craft catalogue.
+  // Runs only while the old sample rows still exist (matched by their original slugs) and
+  // updates them IN PLACE, so order history and carts keep pointing at valid products.
+  const [[oldSample]] = await conn.query("SELECT COUNT(*) AS n FROM products WHERE slug = 'aged-brass-table-lamp'");
+  if (oldSample.n > 0) {
+    console.log("Rebranding sample catalogue to Eagle CNC Art & Craft…");
+    const cats = [
+      ["textiles", "Wall Art", "wall-art", "/images/world-map-wall-art.jpg"],
+      ["lighting", "Name Plates", "name-plates", "/images/name-plate.jpg"],
+      ["decor", "Mandir & Spiritual", "mandir", "/images/ganesha-panel.jpg"],
+      ["furniture", "Jali & Panels", "jali-panels", "/images/om-jali-panel.jpg"],
+      ["art", "Wall Clocks", "clocks", "/images/wall-clock.jpg"],
+      ["rugs", "Gifts & Accessories", "gifts", "/images/coasters.jpg"],
+    ];
+    for (const [oldSlug, name, slug, img] of cats)
+      await conn.query("UPDATE categories SET name = ?, slug = ?, image_url = ? WHERE slug = ? AND NOT EXISTS (SELECT 1 FROM (SELECT id FROM categories WHERE slug = ?) x)", [name, slug, img, oldSlug, slug]);
+    // old sample slug → new slug; the rest of each row comes from seed.sql
+    const map = {
+      "linen-throw-pillow-set": "carved-mandala-wall-art", "aged-brass-table-lamp": "personalised-wooden-name-plate",
+      "hand-thrown-ceramic-vase": "om-jali-mandir-panel", "merino-wool-blanket": "geometric-wooden-coasters-set",
+      "reclaimed-oak-side-table": "decorative-jali-partition-panel", "abstract-canvas-print": "world-map-wooden-wall-art",
+      "soy-wax-candle-amber-cedar": "minimal-wooden-wall-clock", "jute-area-rug-5x8": "ganesha-mandir-back-panel",
+    };
+    const seedSql = fs.readFileSync(path.join(__dirname, "..", "database", "seed.sql"), "utf8");
+    for (const [oldSlug, newSlug] of Object.entries(map)) {
+      const [[row]] = await conn.query("SELECT id FROM products WHERE slug = ?", [oldSlug]);
+      if (!row) continue;
+      // Pull the new product's values straight out of seed.sql so there is one source of truth
+      const m = new RegExp(`\\('([^']+)',\\s*([\\d.]+),\\s*'([^']+)',\\s*\\(SELECT id FROM categories WHERE slug='([^']+)'\\),\\s*'([^']+)',\\s*(\\d),\\s*(\\d+),\\s*'${newSlug}',\\s*'([^']+)',\\s*'([^']+)'\\)`).exec(seedSql);
+      if (!m) { console.warn(`  ! no seed row for ${newSlug}`); continue; }
+      const [, name, price, desc, catSlug, img, featured, stock, metaTitle, metaDesc] = m;
+      await conn.query(`UPDATE products SET name = ?, price = ?, description = ?, category_id = (SELECT id FROM categories WHERE slug = ?),
+        image_url = ?, is_featured = ?, stock_qty = ?, slug = ?, meta_title = ?, meta_description = ? WHERE id = ?`,
+        [name, price, desc, catSlug, img, featured, stock, newSlug, metaTitle, metaDesc, row.id]);
+      await conn.query("DELETE FROM product_images WHERE product_id = ?", [row.id]);   // old decor gallery photos
+      await conn.query("DELETE FROM reviews WHERE product_id = ?", [row.id]);          // reviews were about the old item
+      console.log(`  ~ ${oldSlug} → ${newSlug}`);
+    }
+    await conn.query("UPDATE discount_codes SET min_subtotal = 1499 WHERE code = 'FREESHIP' AND min_subtotal IN (75, 150)");
+  }
+
   if (!process.argv.includes("--no-seed")) {
     console.log("Loading sample data (existing rows are left alone)…");
     await conn.query(fs.readFileSync(path.join(__dirname, "..", "database", "seed.sql"), "utf8"));
-  }
-
-  // The sample prices are written in dollars. For a rupee store, switch each
-  // sample product to a rupee price — but only while it still has its original
-  // sample price, so prices set in the admin panel are never overwritten.
-  if ((process.env.STORE_CURRENCY || "").toUpperCase() === "INR") {
-    const inr = [
-      ["linen-throw-pillow-set", 68, 2499], ["aged-brass-table-lamp", 189, 6999],
-      ["hand-thrown-ceramic-vase", 95, 3499], ["merino-wool-blanket", 145, 5499],
-      ["reclaimed-oak-side-table", 320, 12999], ["abstract-canvas-print", 210, 7999],
-      ["soy-wax-candle-amber-cedar", 42, 1299], ["jute-area-rug-5x8", 275, 9999],
-    ];
-    for (const [slug, oldPrice, newPrice] of inr)
-      await conn.query("UPDATE products SET price = ? WHERE slug = ? AND price = ?", [newPrice, slug, oldPrice]);
-    await conn.query("UPDATE discount_codes SET min_subtotal = 1499 WHERE code = 'FREESHIP' AND min_subtotal = 75");
   }
   await conn.end();
   console.log(`\n✓ Database "${DB}" is ready.`);

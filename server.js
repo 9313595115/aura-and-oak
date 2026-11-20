@@ -1,5 +1,5 @@
 // ============================================================
-//  Aura & Oak — server.js (v3)
+//  Eagle CNC Art & Craft — server.js (v3)
 //  Express + MySQL backend for the storefront, customer accounts,
 //  checkout (Stripe or simulated), and the admin dashboard.
 //
@@ -37,8 +37,8 @@ const BASE_URL   = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(
 // ── Store / business settings (all from .env) ────────────────
 const num = (v, d) => (v === undefined || v === "" || isNaN(Number(v)) ? d : Number(v));
 const STORE = {
-  name:          process.env.STORE_NAME || "Aura & Oak",
-  tagline:       process.env.STORE_TAGLINE || "Curated home decor for spaces that feel intentional, warm, and wholly yours.",
+  name:          process.env.STORE_NAME || "Eagle CNC Art & Craft",
+  tagline:       process.env.STORE_TAGLINE || "CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.",
   email:         process.env.STORE_EMAIL || "",
   phone:         process.env.STORE_PHONE || "",
   whatsapp:      (process.env.STORE_WHATSAPP || "").replace(/[^\d]/g, ""),
@@ -276,12 +276,12 @@ function categoryPath(c) { return c.slug ? `/shop/${encodeURIComponent(c.slug)}`
 
 // Search-friendly wording per category (falls back to generic copy for new categories)
 const CATEGORY_SEO = {
-  textiles:  { phrase: "Linen Cushions, Throws & Blankets", intro: "Linen cushions, merino throws and soft furnishings woven to layer warmth into every room." },
-  lighting:  { phrase: "Table Lamps & Home Lighting", intro: "Hand-finished brass table lamps and warm lighting that make a room glow in the evening." },
-  decor:     { phrase: "Ceramic Vases, Candles & Decor Accents", intro: "Hand-thrown ceramic vases, soy wax candles and small accents that finish a space." },
-  furniture: { phrase: "Wooden Side Tables & Furniture", intro: "Solid and reclaimed wood side tables and furniture built to last for decades." },
-  art:       { phrase: "Wall Art & Canvas Prints", intro: "Abstract canvas prints and original-style wall art, stretched and ready to hang." },
-  rugs:      { phrase: "Jute & Hand-woven Area Rugs", intro: "Natural jute and hand-woven area rugs that ground a living room or bedroom." },
+  "wall-art":   { phrase: "CNC Wooden Wall Art — Mandala, Tree of Life & More", intro: "Intricate CNC-cut wooden wall art — mandalas, tree of life panels and maps that turn a plain wall into a feature." },
+  "name-plates":{ phrase: "Personalised Wooden Name Plates for Home", intro: "Personalised wooden and acrylic name plates for your front door, cut with your family name and house number." },
+  "mandir":     { phrase: "Mandir Jali Panels, Om & Ganesha Wall Art", intro: "CNC-cut mandir back panels, Om and Ganesha designs and pooja room jali work, finished by hand." },
+  "jali-panels":{ phrase: "Decorative CNC Jali & Partition Panels", intro: "Decorative CNC jali screens and partition panels that divide a space while letting light and air through." },
+  "clocks":     { phrase: "Wooden Wall Clocks — Mandala & Designer Clocks", intro: "Designer wooden wall clocks with silent movements — CNC-cut patterns that keep time beautifully." },
+  "gifts":      { phrase: "Personalised Wooden Gifts — Coasters, Keychains & Frames", intro: "Personalised wooden gifts — engraved coasters, keychains and photo frames for birthdays, weddings and corporate gifting." },
 };
 const categorySeo = (c) => CATEGORY_SEO[c.slug] || { phrase: c.name, intro: `Explore our ${c.name.toLowerCase()} collection — every piece chosen for craft, material and lasting beauty.` };
 
@@ -346,8 +346,8 @@ app.get("/", h(async (req, res) => {
   ]);
   const catHtml = cats.slice(0, 6).map((c) => `<a href="${esc(categoryPath(c))}" class="category-card"><img src="${esc(c.image_url)}"${imgSrcset(c.image_url)} sizes="(max-width: 640px) 92vw, 380px" width="1000" height="1250" alt="${esc(c.name)}" loading="lazy" decoding="async" /><div class="category-card-label"><span>${esc(c.name)}</span><small>Shop now</small></div></a>`).join("");
   renderPage(res, "index.html", {
-    title: `${STORE.name} — Handcrafted Home Decor, Lighting & Furniture${STORE.city ? " in " + STORE.city : " Online"}`,
-    description: `Shop handcrafted home decor at ${STORE.name}: linen textiles, brass lamps, hand-thrown ceramic vases, rugs and reclaimed-wood furniture${STORE.city ? `, online or in our ${STORE.city} store` : ""}.${freeShipLine()}`,
+    title: `${STORE.name} — CNC Wall Art, Name Plates & Custom Wooden Decor${STORE.city ? " in " + STORE.city : ""}`,
+    description: `CNC-cut wooden wall art, name plates, mandir panels, jali screens and personalised gifts from ${STORE.name}${STORE.city ? ` in ${STORE.city}` : ""}. Custom designs welcome.${freeShipLine()}`,
     canonical: BASE_URL + "/", image: "/images/hero.jpg",
     head: `<link rel="preload" as="image" href="/images/hero.webp" imagesrcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" imagesizes="100vw" fetchpriority="high" />`,
     fill: { featured: featured.map(cardHtml).join(""), categories: catHtml },
@@ -383,10 +383,10 @@ async function renderShop(req, res, cat) {
   const seo = cat ? categorySeo(cat) : null;
   const path_ = cat ? categoryPath(cat) : "/shop";
   const canonical = BASE_URL + path_;
-  const title = cat ? `${seo.phrase} — Shop ${cat.name} | ${STORE.name}` : `Shop Handcrafted Home Decor Online | ${STORE.name}`;
+  const title = cat ? `${seo.phrase} | ${STORE.name}` : `Shop CNC Wall Art, Name Plates & Wooden Gifts | ${STORE.name}`;
   const description = cat
     ? `${seo.intro} Shop ${cat.name.toLowerCase()} at ${STORE.name}.${freeShipLine()}`
-    : `Shop the full ${STORE.name} collection: linen textiles, brass lighting, hand-thrown ceramics, wall art, rugs and reclaimed-wood furniture.${freeShipLine()}`;
+    : `Shop the full ${STORE.name} collection: CNC-cut wall art, name plates, mandir panels, jali screens, wall clocks and personalised gifts.${freeShipLine()}`;
   const header = `<p class="page-header-eyebrow">${cat ? "Shop by category" : "The Collection"}</p>\n    <h1 id="shopTitle">${esc(cat ? cat.name : "Shop All")}</h1>\n    <p id="shopIntro">${esc(cat ? seo.intro : "Every piece chosen for its craft, material, and lasting beauty.")}</p>`;
   // Crawlable links to every category (the interactive filter buttons are drawn by script)
   const catLinks = `<nav class="sr-only" aria-label="Categories">${cats.map((c) => `<a href="${esc(categoryPath(c))}">${esc(c.name)}</a>`).join(" ")}</nav>`;
@@ -461,7 +461,7 @@ app.get("/product/:slug", h(async (req, res) => {
     + `<div class="product-info"><p class="product-category">${catRow ? `<a href="${esc(categoryPath(catRow))}">${esc(catRow.name)}</a>` : ""}</p><h1 class="product-name">${esc(p.name)}</h1><p class="product-price">${esc(money(p.price))}</p>`
     + `<hr class="product-divider" /><p class="product-desc">${esc(p.description || "")}</p>`
     + `<div class="product-meta"><div class="product-meta-row"><span class="label">Category</span><span class="value">${esc(p.category || "—")}</span></div><div class="product-meta-row"><span class="label">Availability</span><span class="value">${stockText}</span></div></div></div></div>`;
-  const pTitle = p.meta_title && !/\| ?Aura & Oak$/.test(p.meta_title) ? p.meta_title : `${p.name}${p.category ? " — " + p.category : ""} | Buy Online at ${STORE.name}`;
+  const pTitle = p.meta_title && !/\| ?(Aura & Oak|Eagle CNC Art & Craft)$/.test(p.meta_title) ? p.meta_title : `${p.name}${p.category ? " — " + p.category : ""} | Buy Online at ${STORE.name}`;
   renderPage(res, "product.html", { title: pTitle, description: desc, canonical: url, image: p.image_url, type: "product",
     fill: { product: detail, crumb: esc(p.name) }, ld: [ld, breadcrumbLd(crumbList)] });
 }));
@@ -651,7 +651,7 @@ app.post("/api/auth/forgot-password", authLimiter, h(async (req, res) => {
       <div style="font-family:sans-serif;color:#2A2621;max-width:520px">
         <p>Hi ${esc(u.name)},</p>
         <p>Someone asked to reset the password for your ${esc(STORE.name)} account. Click below to choose a new one. The link works for 1 hour.</p>
-        <p><a href="${esc(link)}" style="display:inline-block;background:#B85A44;color:#fff;padding:12px 22px;border-radius:4px;text-decoration:none">Reset password</a></p>
+        <p><a href="${esc(link)}" style="display:inline-block;background:#6E5843;color:#fff;padding:12px 22px;border-radius:4px;text-decoration:none">Reset password</a></p>
         <p style="color:#6B6055;font-size:13px">If you didn't ask for this, you can ignore this email.</p>
       </div>`);
   }

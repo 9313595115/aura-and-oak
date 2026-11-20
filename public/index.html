@@ -3,36 +3,36 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <link rel="icon" href="/favicon.svg" type="image/svg+xml" />
+  <link rel="icon" href="/images/brand/favicon-64.png" type="image/png" />
   <link rel="icon" href="/favicon.ico" sizes="any" />
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
-  <meta name="theme-color" content="#F9F6F0" />
-  <title>Aura & Oak — Curated Home Decor</title>
-  <meta name="description" content="Thoughtfully curated home decor — linen textiles, hand-thrown ceramics, reclaimed wood furniture, and artisan lighting for a soulful home." />
-  <meta property="og:title" content="Aura & Oak — Curated Home Decor" />
-  <meta property="og:description" content="Thoughtfully curated home decor for spaces that feel intentional, warm, and wholly yours." />
+  <meta name="theme-color" content="#F7F3EE" />
+  <title>Eagle CNC Art & Craft — CNC Cut Wall Art, Name Plates & Custom Wooden Decor</title>
+  <meta name="description" content="CNC-cut wooden wall art, name plates, temple panels, jali screens and personalised gifts — precision-cut and hand-finished by Eagle CNC Art &amp; Craft." />
+  <meta property="og:title" content="Eagle CNC Art & Craft — CNC Wall Art & Custom Wooden Decor" />
+  <meta property="og:description" content="Precision CNC-cut wall art, name plates, temple panels and personalised wooden gifts, finished by hand." />
   <meta property="og:image" content="/images/hero.jpg" />
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400;1,600&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/common.css" />
   <!--SEO-->
   <style>
     *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
     :root {
-      --bg:       #F9F6F0;
-      --bg2:      #F2EDE5;
-      --text:     #2A2621;
+      --bg:       #F7F3EE;
+      --bg2:      #EFE9E2;
+      --text:     #2E2419;
       --text2:    #6B6055;
-      --primary:  #A04B37;
+      --primary:  #6E5843;
       --brass:    #C5A059;
-      --muted:    #E8E2D9;
+      --muted:    #E6DFD6;
       --white:    #FFFFFF;
       --radius:   4px;
-      --serif:    'Playfair Display', Georgia, serif;
+      --serif:    'Josefin Sans', Georgia, serif;
       --sans:     'Plus Jakarta Sans', system-ui, sans-serif;
     }
 
@@ -95,7 +95,7 @@
       padding: 14px 40px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
       border-radius: var(--radius); transition: background .2s, transform .15s;
     }
-    .btn-primary:hover { background: #9e4a36; transform: translateY(-1px); }
+    .btn-primary:hover { background: #5A4736; transform: translateY(-1px); }
     .btn-outline {
       display: inline-block; border: 1.5px solid currentColor; color: var(--text);
       padding: 12px 36px; font-size: 12px; font-weight: 600; letter-spacing: .12em; text-transform: uppercase;
@@ -149,7 +149,7 @@
     }
     .overlay-btn:hover { background: var(--primary); color: var(--white); }
     .overlay-btn.add { background: var(--primary); color: var(--white); }
-    .overlay-btn.add:hover { background: #9e4a36; }
+    .overlay-btn.add:hover { background: #5A4736; }
     .product-card-body { padding: 20px 20px 24px; }
     .product-card-category { font-size: 11px; color: var(--text2); letter-spacing: .1em; text-transform: uppercase; margin-bottom: 6px; }
     .product-card-name { font-family: var(--serif); font-size: 18px; font-weight: 500; margin-bottom: 8px; line-height: 1.3; }
@@ -202,7 +202,7 @@
       font-family: var(--sans); font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase;
       cursor: pointer; white-space: nowrap; transition: background .2s;
     }
-    .newsletter-form button:hover { background: #9e4a36; }
+    .newsletter-form button:hover { background: #5A4736; }
     .newsletter-msg { font-size: 14px; margin-top: 14px; color: var(--brass); min-height: 20px; }
 
     /* ── FOOTER ── */
@@ -248,6 +248,19 @@
       .newsletter-form input { border-right: 1px solid rgba(255,255,255,.18); }
       .footer-grid { grid-template-columns: 1fr; }
     }
+
+    /* ── CUSTOM ORDERS ── */
+    .custom { padding: 96px 48px; background: var(--white); }
+    .custom-inner { max-width: 1200px; margin: 0 auto; }
+    .custom-head { text-align: center; max-width: 640px; margin: 0 auto 56px; }
+    .custom-steps { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 24px; counter-reset: step; }
+    .custom-step { background: var(--bg); border: 1px solid var(--muted); border-radius: 6px; padding: 28px 24px; }
+    .custom-step::before { counter-increment: step; content: "0" counter(step); display: block; font-family: var(--serif); font-size: 32px; font-weight: 300; color: var(--primary); margin-bottom: 14px; }
+    .custom-step h3 { font-family: var(--serif); font-size: 19px; font-weight: 600; margin-bottom: 8px; }
+    .custom-step p { font-size: 14px; color: var(--text2); line-height: 1.6; }
+    .custom-cta { text-align: center; margin-top: 40px; display: flex; gap: 12px; justify-content: center; flex-wrap: wrap; }
+    @media (max-width: 960px) { .custom { padding: 64px 24px; } .custom-steps { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+    @media (max-width: 540px) { .custom-steps { grid-template-columns: minmax(0, 1fr); } }
   </style>
   <link rel="stylesheet" href="/css/responsive.css" />
 </head>
@@ -260,7 +273,7 @@
       <a href="#story">Our Story</a>
       <a href="/contact">Visit Us</a>
     </div>
-    <a href="/" class="nav-logo">Aura <span>&</span> Oak</a>
+    <a href="/" class="nav-logo brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="36" height="35" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></a>
     <div class="nav-actions">
       <span class="nav-account-slot"></span>
       <a href="account.html?tab=wishlist">Wishlist</a>
@@ -275,7 +288,7 @@
   <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
   <div class="mobile-nav-drawer" id="mobileNavDrawer">
     <div class="mobile-nav-drawer-header">
-      <span class="drawer-logo">Aura <span>&</span> Oak</span>
+      <span class="drawer-logo brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="36" height="35" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></span>
       <button class="drawer-close" id="mobileNavClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
@@ -291,12 +304,12 @@
 
   <!-- HERO -->
   <section class="hero" style="padding:0">
-    <img src="/images/hero.jpg" srcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" sizes="100vw" width="1920" height="1080" alt="A warm living room styled with Aura &amp; Oak linen, ceramics and lighting" class="hero-img" fetchpriority="high" />
+    <img src="/images/hero.jpg" srcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" sizes="100vw" width="1920" height="1080" alt="Intricate CNC-cut wooden wall art from Eagle CNC Art &amp; Craft" class="hero-img" fetchpriority="high" />
     <div class="hero-content">
-      <p class="hero-eyebrow">The Spring Collection</p>
-      <h1 class="hero-title">Curated for a<br><em>soulful</em> home.</h1>
-      <p class="hero-sub">Thoughtfully chosen pieces for spaces that tell your story.</p>
-      <a href="/shop" class="btn-primary">Explore the Collection</a>
+      <p class="hero-eyebrow">CNC Art &amp; Craft Studio</p>
+      <h1 class="hero-title">Precision cut.<br><em>Crafted by hand.</em></h1>
+      <p class="hero-sub">Wall art, name plates, temple panels and personalised pieces — designed, CNC-cut and finished in our workshop.</p>
+      <a href="/shop" class="btn-primary">Shop the Collection</a>
     </div>
   </section>
 
@@ -321,16 +334,37 @@
     </div>
   </section>
 
+  <!-- CUSTOM ORDERS -->
+  <section class="custom" id="custom">
+    <div class="custom-inner">
+      <div class="custom-head">
+        <p class="section-eyebrow">Made to Order</p>
+        <h2 class="section-title">Your design, cut to perfection.</h2>
+        <p class="section-sub">Name plates, temple panels, logos, gifts or a design of your own — send us your idea and we&rsquo;ll turn it into a finished piece.</p>
+      </div>
+      <div class="custom-steps">
+        <div class="custom-step"><h3>Share your idea</h3><p>Send a sketch, photo, text or logo along with the size and material you have in mind.</p></div>
+        <div class="custom-step"><h3>Approve the design</h3><p>We prepare a digital preview and a quote. Nothing is cut until you&rsquo;re happy with it.</p></div>
+        <div class="custom-step"><h3>Precision cutting</h3><p>Your piece is CNC-cut from MDF, plywood, solid wood or acrylic, then sanded and finished by hand.</p></div>
+        <div class="custom-step"><h3>Delivered to you</h3><p>Carefully packed and shipped to your door, or ready to collect from our workshop.</p></div>
+      </div>
+      <div class="custom-cta">
+        <a href="/contact?topic=custom#contactForm" class="btn-primary">Request a Custom Quote</a>
+        <a href="/shop" class="btn-outline">Browse Ready Designs</a>
+      </div>
+    </div>
+  </section>
+
   <!-- STORY -->
   <section class="story" id="story">
     <div class="story-inner">
-      <div class="story-img"><img src="/images/story.jpg" srcset="/images/story-sm.webp 600w, /images/story.webp 1000w" sizes="(max-width: 900px) 92vw, 520px" width="1000" height="1250" alt="A calm living room with a linen sofa, wooden side tables and a knitted pouf" loading="lazy" decoding="async" /></div>
+      <div class="story-img"><img src="/images/story.jpg" srcset="/images/story-sm.webp 600w, /images/story.webp 1000w" sizes="(max-width: 900px) 92vw, 520px" width="1000" height="1250" alt="A CNC machine cutting a detailed pattern into wood in the Eagle workshop" loading="lazy" decoding="async" /></div>
       <div class="story-text">
-        <p class="section-eyebrow">Our Story</p>
-        <h2 class="section-title">Designed to make your home feel like you.</h2>
-        <p class="section-sub">Aura & Oak was founded with a simple belief — that the objects we live with should carry meaning. We source directly from independent makers and artisans, choosing pieces that age beautifully and tell a story.</p>
-        <p class="section-sub" style="margin-top:-24px">Every item in our collection is held to the same standard: exceptional material, honest craft, and a design that endures beyond seasons.</p>
-        <a href="/shop" class="btn-outline">Discover Our Collection</a>
+        <p class="section-eyebrow">Our Workshop</p>
+        <h2 class="section-title">Where machine precision meets handcraft.</h2>
+        <p class="section-sub">At Eagle CNC Art &amp; Craft, every piece starts as a drawing on our screen and ends in a craftsman&rsquo;s hands. Our CNC machines cut intricate patterns with accuracy no hand tool can match; then each piece is sanded, painted or polished by hand.</p>
+        <p class="section-sub" style="margin-top:-24px">From a single name plate to a full set of temple panels, we work in MDF, plywood, solid wood and acrylic — and we&rsquo;re always happy to make something that&rsquo;s entirely yours.</p>
+        <a href="/contact?topic=custom#contactForm" class="btn-outline">Start a Custom Order</a>
       </div>
     </div>
   </section>
@@ -350,9 +384,9 @@
   <section class="visit" id="visit">
     <div class="visit-inner">
       <div>
-        <p class="section-eyebrow">Visit the Store</p>
+        <p class="section-eyebrow">Visit the Workshop</p>
         <h2 class="section-title">Come see it in person.</h2>
-        <p class="section-sub">Touch the linen, see the glaze up close, and get styling advice from our team. Shop online with free shipping over <span data-money="free_shipping_threshold">$150</span>, or visit us in store.</p>
+        <p class="section-sub">See the detail of our work up close, choose woods and finishes, and talk through your custom design with our team. Shop online with free shipping over <span data-money="free_shipping_threshold">$150</span>, or visit us in person.</p>
         <div class="footer-nap visit-nap" data-store-nap></div>
         <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
           <a href="/contact" class="btn-primary">Directions &amp; Hours</a>
@@ -365,8 +399,8 @@
   <!-- NEWSLETTER -->
   <section class="newsletter">
     <p class="section-eyebrow">Stay in Touch</p>
-    <h2 class="section-title">Join the Aura & Oak Circle</h2>
-    <p class="newsletter-sub">New arrivals, exclusive offers, and stories from our makers — delivered thoughtfully.</p>
+    <h2 class="section-title">Get new designs first</h2>
+    <p class="newsletter-sub">New designs, festive collections and workshop offers — straight to your inbox, never spam.</p>
     <form class="newsletter-form" id="newsletterForm">
       <input type="email" placeholder="Your email address" id="newsletterEmail" required />
       <button type="submit">Subscribe</button>
@@ -378,8 +412,8 @@
   <footer>
     <div class="footer-grid">
       <div>
-        <div class="footer-brand">Aura <span>&</span> Oak</div>
-        <p class="footer-tagline">Curated home decor for spaces that feel intentional, warm, and wholly yours.</p>
+        <div class="footer-brand brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="40" height="39" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></div>
+        <p class="footer-tagline">CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.</p>
         <div class="footer-nap" data-store-nap style="margin-top:16px;flex-direction:column;gap:6px"></div>
       </div>
       <div class="footer-col">
@@ -402,13 +436,13 @@
         <h3>Company</h3>
         <ul>
           <li><a href="#story">Our Story</a></li>
-          <li><a href="/contact">Visit the Store</a></li>
+          <li><a href="/contact">Visit the Workshop</a></li>
           <li><a href="account.html">My Account</a></li>
         </ul>
       </div>
     </div>
     <div class="footer-bottom">
-      <span>&copy; <span data-year>2026</span> Aura &amp; Oak. All rights reserved.</span>
+      <span>&copy; <span data-year>2026</span> Eagle CNC Art &amp; Craft. All rights reserved.</span>
       <span>Crafted with care.</span>
     </div>
   </footer>

@@ -1,5 +1,5 @@
 -- ============================================================
---  Aura & Oak — MySQL / MariaDB schema (v3)
+--  Eagle CNC Art & Craft — MySQL / MariaDB schema (v3)
 --  Fresh install:   npm run db:setup      (runs this + seed.sql + upgrades)
 --  Manual:          mysql -u USER -p DB < database/schema.sql
 --

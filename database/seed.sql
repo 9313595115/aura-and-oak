@@ -1,39 +1,75 @@
 -- ============================================================
---  Aura & Oak — sample data. Safe to re-run: unique keys on
---  slug / code / (product_id,image_url) make INSERT IGNORE skip
---  rows that already exist (v2 duplicated products on re-run).
+--  Eagle CNC Art & Craft — sample catalogue (prices in INR).
+--  Safe to re-run: unique keys on slug / code / (product_id,
+--  image_url) make INSERT IGNORE skip rows that already exist.
 -- ============================================================
 
 INSERT IGNORE INTO categories (name, slug, image_url) VALUES
-  ('Textiles',  'textiles',  '/images/pillow.jpg'),
-  ('Lighting',  'lighting',  '/images/lamp.jpg'),
-  ('Decor',     'decor',     '/images/vase.jpg'),
-  ('Furniture', 'furniture', '/images/table.jpg'),
-  ('Art',       'art',       '/images/art.jpg'),
-  ('Rugs',      'rugs',      '/images/rug.jpg');
+  ('Wall Art',           'wall-art',    '/images/world-map-wall-art.jpg'),
+  ('Name Plates',        'name-plates', '/images/name-plate.jpg'),
+  ('Mandir & Spiritual', 'mandir',      '/images/ganesha-panel.jpg'),
+  ('Jali & Panels',      'jali-panels', '/images/om-jali-panel.jpg'),
+  ('Wall Clocks',        'clocks',      '/images/wall-clock.jpg'),
+  ('Gifts & Accessories','gifts',       '/images/coasters.jpg');
 
 INSERT IGNORE INTO products (name, price, description, category_id, image_url, is_featured, stock_qty, slug, meta_title, meta_description) VALUES
-  ('Linen Throw Pillow Set',          68.00, 'A set of two perfectly weighted linen throw pillows in a muted natural tone. Removable covers, feather-down insert.',                      (SELECT id FROM categories WHERE slug='textiles'),  '/images/pillow.jpg',  1, 45, 'linen-throw-pillow-set',     'Linen Throw Pillow Set | Aura & Oak',      'Shop the Linen Throw Pillow Set - natural tone linen with removable, feather-down covers.'),
-  ('Aged Brass Table Lamp',          189.00, 'Hand-finished aged brass base with a warm linen shade. Gives off a golden, amber glow that transforms any room.',                         (SELECT id FROM categories WHERE slug='lighting'),  '/images/lamp.jpg',    1, 20, 'aged-brass-table-lamp',      'Aged Brass Table Lamp | Aura & Oak',       'A hand-finished aged brass table lamp with a warm linen shade. Elevate any room with a golden, amber glow.'),
-  ('Hand-thrown Ceramic Vase',        95.00, 'Each piece is unique — thrown by hand on a wheel and fired in a wood-burning kiln. Slight variations in glaze are intentional.',          (SELECT id FROM categories WHERE slug='decor'),     '/images/vase.jpg',    1, 32, 'hand-thrown-ceramic-vase',   'Hand-thrown Ceramic Vase | Aura & Oak',    'A one-of-a-kind hand-thrown ceramic vase, fired in a wood-burning kiln. No two are alike.'),
-  ('Merino Wool Blanket',            145.00, '100% New Zealand merino wool. Breathable, temperature-regulating, and impossibly soft. Available in four natural colorways.',             (SELECT id FROM categories WHERE slug='textiles'),  '/images/blanket.jpg', 1, 55, 'merino-wool-blanket',        'Merino Wool Blanket | Aura & Oak',         '100% New Zealand merino wool blanket - breathable, temperature-regulating, and impossibly soft.'),
-  ('Reclaimed Oak Side Table',       320.00, 'Cut from sustainably harvested reclaimed oak. Each table carries the natural character of the wood — grain, knots, and all.',             (SELECT id FROM categories WHERE slug='furniture'), '/images/table.jpg',   0,  8, 'reclaimed-oak-side-table',   'Reclaimed Oak Side Table | Aura & Oak',    'A side table cut from sustainably harvested reclaimed oak, carrying the natural grain and character of the wood.'),
-  ('Abstract Canvas Print',          210.00, 'Original abstract painting reproduced on museum-quality canvas. Ships stretched and ready to hang.',                                     (SELECT id FROM categories WHERE slug='art'),       '/images/art.jpg',     0, 15, 'abstract-canvas-print',      'Abstract Canvas Print | Aura & Oak',       'Museum-quality canvas reproduction of an original abstract painting. Ships stretched and ready to hang.'),
-  ('Soy Wax Candle — Amber & Cedar',  42.00, 'Hand-poured soy wax with a cotton wick. Notes of warm amber, cedarwood, and a hint of sandalwood. Burns for 60+ hours.',              (SELECT id FROM categories WHERE slug='decor'),     '/images/candle.jpg',  0, 80, 'soy-wax-candle-amber-cedar', 'Soy Wax Candle Amber & Cedar | Aura & Oak','Hand-poured soy wax candle with notes of amber, cedarwood, and sandalwood. Burns 60+ hours.'),
-  ('Jute Area Rug 5x8',              275.00, 'Natural jute fibers hand-woven into a flat-weave rug. Durable enough for high-traffic areas, beautiful enough to anchor a living room.', (SELECT id FROM categories WHERE slug='rugs'),      '/images/rug.jpg',     0, 12, 'jute-area-rug-5x8',          'Jute Area Rug 5x8 | Aura & Oak',           'A hand-woven flat-weave jute area rug, durable for high-traffic spaces and beautiful enough to anchor a room.');
-
-INSERT IGNORE INTO product_images (product_id, image_url, sort_order)
-  SELECT id, '/images/hero.jpg', 1 FROM products WHERE slug = 'linen-throw-pillow-set';
+  ('Carved Mandala Wall Art', 2499.00,
+   'A floral mandala medallion carved in 3D on our CNC router from solid wood, then hand-sanded and finished in a rich walnut stain. Ready to hang. 45 × 45 cm; other sizes on request.',
+   (SELECT id FROM categories WHERE slug='wall-art'), '/images/mandala-wall-art.jpg', 1, 25, 'carved-mandala-wall-art',
+   'Carved Mandala Wooden Wall Art | Eagle CNC Art & Craft', 'Solid wood mandala wall art, 3D CNC-carved and hand-finished in walnut. Ready to hang, custom sizes available.'),
+  ('World Map Wooden Wall Art', 3999.00,
+   'A layered world map cut from birch plywood in natural wood tones. Each continent is cut separately and mounted with spacers for a striking 3D shadow on your wall. 120 × 60 cm.',
+   (SELECT id FROM categories WHERE slug='wall-art'), '/images/world-map-wall-art.jpg', 0, 15, 'world-map-wooden-wall-art',
+   'World Map Wooden Wall Art | Eagle CNC Art & Craft', 'Layered 3D wooden world map wall art, CNC-cut from birch plywood. 120 × 60 cm statement piece for living rooms and offices.'),
+  ('Personalised Wooden Name Plate', 1499.00,
+   'Your family name and house number, CNC-cut in raised letters on a weather-sealed wooden board. Choose from walnut, teak or natural finish — we send a design preview before cutting. 45 × 15 cm.',
+   (SELECT id FROM categories WHERE slug='name-plates'), '/images/name-plate.jpg', 1, 50, 'personalised-wooden-name-plate',
+   'Personalised Wooden Name Plate for Home | Eagle CNC Art & Craft', 'Custom wooden name plate with your family name and house number, CNC-cut and weather-sealed. Free design preview before cutting.'),
+  ('Round Welcome Family Board', 1299.00,
+   'A round wooden door hanger with a laser-engraved welcome message and your family name in elegant script. Includes a cord for hanging. 30 cm diameter.',
+   (SELECT id FROM categories WHERE slug='name-plates'), '/images/family-board.jpg', 0, 40, 'round-welcome-family-board',
+   'Round Welcome Family Name Board | Eagle CNC Art & Craft', 'Laser-engraved round wooden welcome sign personalised with your family name. A warm touch for your front door.'),
+  ('Om Jali Mandir Panel', 1899.00,
+   'An intricate geometric jali panel for the back or doors of your home mandir, CNC-cut from 6 mm MDF and finished in a deep teak tone. Lets light glow through beautifully. 60 × 90 cm; made to your size on request.',
+   (SELECT id FROM categories WHERE slug='mandir'), '/images/om-jali-panel.jpg', 1, 30, 'om-jali-mandir-panel',
+   'Om Jali Mandir Panel | Eagle CNC Art & Craft', 'Geometric CNC-cut jali panel for home mandirs and pooja rooms. Teak finish, custom sizes made to order.'),
+  ('Ganesha Mandir Back Panel', 3499.00,
+   'A detailed Ganesha relief, 3D-carved on our CNC router from solid wood and finished by hand. Ideal as a mandir back panel or entrance piece. 45 × 60 cm.',
+   (SELECT id FROM categories WHERE slug='mandir'), '/images/ganesha-panel.jpg', 0, 12, 'ganesha-mandir-back-panel',
+   'Ganesha Carved Mandir Back Panel | Eagle CNC Art & Craft', '3D CNC-carved solid wood Ganesha relief panel for your mandir or entrance, hand-finished.'),
+  ('Dancing Ganesha Wooden Idol', 2799.00,
+   'A dancing Ganesha figure carved in fine detail from solid wood, finished with a natural polish that brings out the grain. A meaningful gift for housewarmings and festivals. 30 cm tall.',
+   (SELECT id FROM categories WHERE slug='mandir'), '/images/ganesha-idol.jpg', 0, 10, 'dancing-ganesha-wooden-idol',
+   'Dancing Ganesha Wooden Idol | Eagle CNC Art & Craft', 'Finely carved solid wood dancing Ganesha idol, 30 cm. A meaningful housewarming and festival gift.'),
+  ('Decorative Jali Partition Panel', 6999.00,
+   'A floor-to-ceiling jali screen that divides a room while letting light and air through. CNC-cut from 12 mm MDF and finished in your choice of colour. 90 × 210 cm per panel; multiple panels can be joined.',
+   (SELECT id FROM categories WHERE slug='jali-panels'), '/images/jali-partition.jpg', 0, 8, 'decorative-jali-partition-panel',
+   'Decorative CNC Jali Partition Panel | Eagle CNC Art & Craft', 'Floor-to-ceiling CNC jali partition screen in 12 mm MDF, finished in your colour. Joins into multi-panel dividers.'),
+  ('3D Carved Door Panel', 8999.00,
+   'Classic 3D carving for main doors and wardrobes — pillars, mouldings and ornament cut on our CNC router in solid wood or HDHMR, ready for your carpenter to fit. Sized to your door.',
+   (SELECT id FROM categories WHERE slug='jali-panels'), '/images/carved-door-panel.jpg', 0, 5, '3d-carved-door-panel',
+   '3D CNC Carved Door Panel | Eagle CNC Art & Craft', 'Made-to-measure 3D CNC carved panels for main doors and wardrobes, in solid wood or HDHMR.'),
+  ('Minimal Wooden Wall Clock', 1699.00,
+   'A clean, modern wall clock with a turned wooden rim and silent sweep movement — no ticking. Easy-to-read numerals. 30 cm diameter.',
+   (SELECT id FROM categories WHERE slug='clocks'), '/images/wall-clock.jpg', 0, 30, 'minimal-wooden-wall-clock',
+   'Minimal Wooden Wall Clock | Eagle CNC Art & Craft', 'Modern 30 cm wall clock with a wooden rim and silent sweep movement.'),
+  ('Vintage Wooden Desk Clock', 1499.00,
+   'A compact desk clock in a solid wood case with a classic cream dial and Roman-style numerals. Personalise the base with a name or date. 15 × 15 cm.',
+   (SELECT id FROM categories WHERE slug='clocks'), '/images/desk-clock.jpg', 0, 20, 'vintage-wooden-desk-clock',
+   'Vintage Wooden Desk Clock | Eagle CNC Art & Craft', 'Solid wood desk clock with a classic dial — personalise it with a name or date. A thoughtful gift.'),
+  ('Geometric Wooden Coasters (Set of 4)', 699.00,
+   'Laser-cut star-pattern coasters in natural birch, sealed against heat and moisture. Add initials or a logo for gifts and corporate orders. 10 cm each.',
+   (SELECT id FROM categories WHERE slug='gifts'), '/images/coasters.jpg', 1, 80, 'geometric-wooden-coasters-set',
+   'Geometric Laser-Cut Wooden Coasters, Set of 4 | Eagle CNC Art & Craft', 'Set of 4 laser-cut geometric birch coasters, heat-sealed. Personalise with initials or a logo.'),
+  ('Wooden Couple Keychains (Pair)', 349.00,
+   'A matching pair of hand-painted wooden keychains — a sweet gift for couples and friends. Add names or a date on the back at no extra cost.',
+   (SELECT id FROM categories WHERE slug='gifts'), '/images/keychains.jpg', 0, 100, 'wooden-couple-keychains',
+   'Wooden Couple Keychains, Pair | Eagle CNC Art & Craft', 'Hand-painted wooden couple keychains, personalised free with names or a date.'),
+  ('Engraved Wooden Photo Frame', 899.00,
+   'A natural wood photo frame with your message laser-engraved on the border — perfect for weddings, birthdays and anniversaries. Holds a 5 × 7 inch photo.',
+   (SELECT id FROM categories WHERE slug='gifts'), '/images/photo-frame.jpg', 0, 45, 'engraved-wooden-photo-frame',
+   'Engraved Wooden Photo Frame | Eagle CNC Art & Craft', 'Natural wood 5×7 photo frame with a personalised laser-engraved message.');
 
 INSERT IGNORE INTO discount_codes (code, type, value, min_subtotal, active) VALUES
-  ('WELCOME10', 'percent',       10.00, 0,     1),
-  ('FREESHIP',  'free_shipping',  0.00, 75.00, 1);
-
-INSERT IGNORE INTO reviews (id, product_id, name, rating, comment) VALUES
-  (1, (SELECT id FROM products WHERE slug='linen-throw-pillow-set'), 'Priya S.',  5, 'These pillows are gorgeous — the linen feels substantial and the color is exactly as pictured.'),
-  (2, (SELECT id FROM products WHERE slug='linen-throw-pillow-set'), 'Marcus T.', 4, 'Lovely quality. Wish they came in a bit brighter tone but very happy overall.'),
-  (3, (SELECT id FROM products WHERE slug='aged-brass-table-lamp'),  'Elena R.',  5, 'This lamp made my whole living room feel warmer. Worth every penny.'),
-  (4, (SELECT id FROM products WHERE slug='hand-thrown-ceramic-vase'),'Dana K.',  5, 'Each vase really is unique. Mine has a beautiful drip glaze pattern.');
-
--- No admin is seeded here: server.js creates one on first boot
--- (password from ADMIN_INITIAL_PASSWORD, or a random one printed once).
+  ('WELCOME10', 'percent',       10.00, 0,       1),
+  ('FREESHIP',  'free_shipping',  0.00, 1499.00, 1);

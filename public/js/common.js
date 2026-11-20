@@ -1,5 +1,5 @@
 /* ============================================================
-   Aura & Oak — shared front-end helpers (loaded on every page)
+   Eagle CNC Art & Craft — shared front-end helpers (loaded on every page)
    API client, auth, cart drawer, mobile nav, money formatting,
    HTML escaping, stars, stock badges, wishlist, store info.
    ============================================================ */

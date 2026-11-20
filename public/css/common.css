@@ -1,13 +1,13 @@
 /* ============================================================
-   Aura & Oak — shared styles (loaded before each page's own <style>,
+   Eagle CNC Art & Craft — shared styles (loaded before each page's own <style>,
    so page rules can override). Mobile nav, cart drawer, toast,
    stars, stock badges, wishlist heart, store info, WhatsApp button.
    ============================================================ */
 
 :root {
-  --ao-bg: #F9F6F0; --ao-bg2: #F2EDE5; --ao-text: #2A2621; --ao-text2: #6B6055;
-  --ao-primary: #A04B37; --ao-primary-dark: #9e4a36; --ao-brass: #C5A059; --ao-muted: #E8E2D9;
-  --ao-serif: 'Playfair Display', Georgia, serif; --ao-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
+  --ao-bg: #F7F3EE; --ao-bg2: #EFE9E2; --ao-text: #2E2419; --ao-text2: #6B6055;
+  --ao-primary: #6E5843; --ao-primary-dark: #5A4736; --ao-brass: #C5A059; --ao-muted: #E6DFD6;
+  --ao-serif: 'Josefin Sans', Georgia, serif; --ao-sans: 'Plus Jakarta Sans', system-ui, sans-serif;
 }
 
 img { max-width: 100%; }
