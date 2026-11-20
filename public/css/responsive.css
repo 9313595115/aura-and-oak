@@ -81,7 +81,7 @@ img, video { max-width: 100%; }
 .brand-lockup .brand-mark { width: 36px; height: auto; flex: none; display: block; }
 .brand-lockup .brand-text { display: flex; flex-direction: column; line-height: 1; }
 .brand-lockup .brand-name { font-family: 'Josefin Sans', system-ui, sans-serif; font-weight: 400; font-size: 20px; letter-spacing: .34em; margin-right: -.34em; color: #2E2419; }
-.brand-lockup .brand-sub { font-family: 'Josefin Sans', system-ui, sans-serif; font-weight: 400; font-size: 8.5px; letter-spacing: .26em; text-transform: uppercase; color: #5C4E40; margin-top: 5px; }
+.brand-lockup .brand-sub { font-family: 'Josefin Sans', system-ui, sans-serif; font-weight: 400; font-size: 10px; letter-spacing: .2em; text-transform: uppercase; color: #5C4E40; margin-top: 5px; }
 .footer-brand.brand-lockup .brand-name { color: #F7F3EE; }
 .footer-brand.brand-lockup .brand-sub { color: rgba(247, 243, 238, .7); }
 .footer-brand.brand-lockup .brand-mark { width: 40px; }
@@ -92,7 +92,7 @@ h1, h2, .section-title, .hero-title, .page-header h1, .product-name { letter-spa
 @media (max-width: 400px) {
   .brand-lockup .brand-mark { width: 30px; }
   .brand-lockup .brand-name { font-size: 17px; letter-spacing: .28em; margin-right: -.28em; }
-  .brand-lockup .brand-sub { font-size: 7.5px; letter-spacing: .2em; }
+  .brand-lockup .brand-sub { font-size: 9px; letter-spacing: .14em; }
 }
 /* The old logo styled its <span> in italics — keep the Eagle wordmark upright like the real logo */
 .brand-lockup span, .nav-logo.brand-lockup span, .drawer-logo.brand-lockup span, .footer-brand.brand-lockup span { font-style: normal !important; }
