@@ -36,7 +36,11 @@
   .nav-secure { font-size: 12px; color: var(--text2); display: flex; align-items: center; gap: 6px; }
 
   .checkout-wrap { max-width: 1100px; margin: 0 auto; padding: 48px 24px 100px; display: grid; grid-template-columns: 1.3fr 1fr; gap: 56px; }
-  @media (max-width: 900px) { .checkout-wrap { grid-template-columns: 1fr; padding: 32px 20px 80px; } nav { padding: 0 20px; } }
+  @media (max-width: 900px) {
+    .checkout-wrap { grid-template-columns: minmax(0, 1fr); padding: 32px 20px 80px; } nav { padding: 0 20px; }
+    /* Phones/tablets: show the order summary (with the promo box) before the form, not after "Place Order" */
+    .order-summary-card { order: -1; position: static; }
+  }
 
   .steps { display: flex; gap: 8px; margin-bottom: 32px; font-size: 12px; color: var(--text2); text-transform: uppercase; letter-spacing: .06em; }
   .steps .active { color: var(--primary); font-weight: 700; }
@@ -80,6 +84,14 @@
   .summary-item-qty { color: var(--text2); }
   .summary-item-price { font-size: 13px; font-weight: 600; }
   .summary-row { display: flex; justify-content: space-between; font-size: 14px; margin-top: 10px; }
+  .promo-row { display: flex; gap: 8px; margin-top: 18px; padding-top: 16px; border-top: 1px solid var(--muted); }
+  .promo-input { flex: 1; min-width: 0; padding: 11px 12px; border: 1px solid var(--muted); border-radius: 4px; font: inherit; font-size: 14px; text-transform: uppercase; background: var(--white); }
+  .promo-input:focus { outline: none; border-color: var(--text); }
+  .promo-btn { padding: 0 18px; border: 1px solid var(--text); border-radius: 4px; background: var(--text); color: var(--white); font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; cursor: pointer; }
+  .promo-btn:hover { background: var(--primary); border-color: var(--primary); }
+  .promo-btn.remove { background: transparent; color: var(--text); }
+  .promo-msg { font-size: 12px; margin-top: 8px; min-height: 1em; }
+  .promo-msg.ok { color: #3F7D4F; } .promo-msg.err { color: #A33A2B; }
   .summary-row.total { font-weight: 800; font-size: 17px; margin-top: 14px; padding-top: 14px; border-top: 1px solid var(--muted); }
 
   .empty-note { text-align: center; padding: 60px 20px; color: var(--text2); }
@@ -151,6 +163,12 @@
     <div class="summary-row"><span>Shipping</span><span id="sumShipping">$0.00</span></div>
     <div class="summary-row" id="sumTaxRow" style="display:none"><span id="sumTaxLabel">Tax</span><span id="sumTax">$0.00</span></div>
     <div class="summary-row total"><span>Total</span><span id="sumTotal">$0.00</span></div>
+    <form class="promo-row" id="checkoutPromoForm" onsubmit="event.preventDefault(); applyCheckoutPromo();">
+      <label for="checkoutPromoInput" class="sr-only">Promo code</label>
+      <input type="text" class="promo-input" id="checkoutPromoInput" placeholder="Promo code" autocomplete="off" autocapitalize="characters" />
+      <button class="promo-btn" type="submit" id="checkoutPromoBtn">Apply</button>
+    </form>
+    <p class="promo-msg" id="checkoutPromoMsg" role="status"></p>
   </div>
 </div>
 
@@ -182,6 +200,45 @@
     document.getElementById('sumTaxLabel').textContent = storeInfo().tax_label || 'Tax';
     document.getElementById('sumTax').textContent = fmt(totals.tax_amount);
     document.getElementById('placeOrderBtn').textContent = `Place Order · ${fmt(totals.total)}`;
+  }
+
+  // ── Promo code at checkout (also picks up a code applied on the cart page)
+  function setPromoUi(discount) {
+    const input = document.getElementById('checkoutPromoInput'), btn = document.getElementById('checkoutPromoBtn');
+    const applied = discount && discount.valid;
+    input.value = applied ? discount.code : input.value; input.readOnly = !!applied;
+    btn.textContent = applied ? 'Remove' : 'Apply'; btn.classList.toggle('remove', !!applied);
+  }
+  function savedText(data) {
+    const d = data.discount;
+    return d.free_shipping ? `"${d.code}" applied — free shipping on this order.` : `"${d.code}" applied — you save ${fmt(data.totals.discount_amount)}.`;
+  }
+  function promoMsg(text, ok) {
+    const m = document.getElementById('checkoutPromoMsg'); m.textContent = text || ''; m.className = 'promo-msg ' + (ok ? 'ok' : 'err');
+  }
+  async function refreshTotals() {
+    const data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode }) });
+    renderSummary(data); setPromoUi(data.discount); return data;
+  }
+  async function applyCheckoutPromo() {
+    const input = document.getElementById('checkoutPromoInput');
+    if (input.readOnly) {                                   // "Remove"
+      discountCode = ''; sessionStorage.removeItem('ao_promo'); input.readOnly = false; input.value = '';
+      await refreshTotals(); promoMsg('Promo code removed.', true); return;
+    }
+    const code = input.value.trim().toUpperCase();
+    if (!code) return promoMsg('Enter a promo code.', false);
+    const prev = discountCode; discountCode = code;
+    try {
+      const data = await refreshTotals();
+      if (data.discount && data.discount.valid) {
+        sessionStorage.setItem('ao_promo', code);
+        promoMsg(savedText(data), true);
+      } else {
+        discountCode = prev; await refreshTotals();
+        promoMsg((data.discount && data.discount.message) || 'That code is not valid or has expired.', false);
+      }
+    } catch (e) { discountCode = prev; promoMsg(e.message, false); }
   }
 
   async function loadSavedAddresses() {
@@ -295,7 +352,8 @@
       return;
     }
     if (discountCode && !data.discount.valid) { discountCode = ''; sessionStorage.removeItem('ao_promo'); }
-    renderSummary(data);
+    renderSummary(data); setPromoUi(data.discount);
+    if (data.discount && data.discount.valid) promoMsg(savedText(data), true);
 
     if ((config.store || {}).default_country) document.getElementById('country').value = config.store.default_country;
     const user = getUser();

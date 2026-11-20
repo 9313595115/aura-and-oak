@@ -115,7 +115,9 @@ const mailTransport = process.env.SMTP_HOST
 async function sendMail(to, subject, html) {
   if (!to) return { sent: false };
   if (!mailTransport) {
-    console.log(`\n✉️  [DEV EMAIL — no SMTP] To: ${to}\nSubject: ${subject}\n${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600)}\n`);
+    // No SMTP configured: print the email (and any links in it, e.g. password-reset) to the server log
+    const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
+    console.log(`\n✉️  [DEV EMAIL — no SMTP] To: ${to}\nSubject: ${subject}\n${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600)}${links.length ? "\nLinks: " + links.join("  ") : ""}\n`);
     return { sent: false, simulated: true };
   }
   try {
@@ -632,7 +634,8 @@ app.post("/api/auth/change-password", authRequired, authLimiter, h(async (req, r
   const { current_password, new_password } = req.body;
   if (typeof new_password !== "string" || new_password.length < 8) throw bad("New password must be at least 8 characters.");
   const [[u]] = await pool.query("SELECT password_hash FROM users WHERE id = ?", [req.user.id]);
-  if (!u || !(await bcrypt.compare(String(current_password || ""), u.password_hash))) throw new HttpError(401, "Current password is incorrect.");
+  if (!u || !(await bcrypt.compare(String(current_password || ""), u.password_hash))) throw bad("Current password is incorrect.");
+  if (current_password === new_password) throw bad("The new password must be different from the current one.");
   await pool.query("UPDATE users SET password_hash = ? WHERE id = ?", [await bcrypt.hash(new_password, 12), req.user.id]);
   res.json({ success: true });
 }));
@@ -1056,7 +1059,8 @@ app.post("/api/admin/change-password", adminRequired, h(async (req, res) => {
   const { current_password, new_password } = req.body;
   if (typeof new_password !== "string" || new_password.length < 10) throw bad("New password must be at least 10 characters.");
   const [[admin]] = await pool.query("SELECT * FROM admin_users WHERE id = ?", [req.admin.id]);
-  if (!(await bcrypt.compare(String(current_password || ""), admin.password_hash))) throw new HttpError(401, "Current password is incorrect.");
+  if (!(await bcrypt.compare(String(current_password || ""), admin.password_hash))) throw bad("Current password is incorrect.");
+  if (current_password === new_password) throw bad("The new password must be different from the current one.");
   await pool.query("UPDATE admin_users SET password_hash = ? WHERE id = ?", [await bcrypt.hash(new_password, 12), req.admin.id]);
   res.json({ success: true });
 }));
@@ -1316,6 +1320,7 @@ app.get("/api/admin/export/:what.csv", adminRequired, h(async (req, res) => {
     subscribers: "SELECT email, created_at FROM newsletter_subscribers ORDER BY created_at DESC",
     orders: "SELECT order_number, created_at, email, shipping_full_name, status, payment_status, subtotal, discount_amount, shipping_amount, tax_amount, total, currency, shipping_city, shipping_country FROM orders ORDER BY created_at DESC",
     customers: "SELECT name, email, created_at FROM users ORDER BY created_at DESC",
+    products: "SELECT p.name, p.slug, c.name AS category, p.price, p.stock_qty, p.is_featured, p.is_active, p.image_url, p.updated_at FROM products p LEFT JOIN categories c ON c.id = p.category_id ORDER BY c.name, p.name",
   };
   const q = queries[req.params.what];
   if (!q) throw new HttpError(404, "Unknown export");

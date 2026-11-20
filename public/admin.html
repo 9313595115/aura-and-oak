@@ -203,6 +203,7 @@
           <h1>Products</h1>
           <div class="filters">
             <input type="search" id="productSearch" placeholder="Search products" />
+            <button class="btn-secondary" onclick="exportCsv('products')">Export CSV</button>
             <button class="btn-primary" onclick="openProductModal()">+ Add Product</button>
           </div>
         </div>
@@ -490,7 +491,7 @@
       const o = await adminApi(`/api/admin/orders/${id}`);
       const cancelled = o.status === 'cancelled';
       $('orderModalBody').innerHTML = `
-        <p><strong>${esc(o.order_number)}</strong> · ${statusPill(o.status)} <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
+        <p><strong>${esc(o.order_number)}</strong> · Order: ${statusPill(o.status)} · Payment: <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
         <div class="kv">
           ${esc(o.email)}${o.shipping_phone ? ' · ' + esc(o.shipping_phone) : ''}<br/>
           Placed ${new Date(o.created_at).toLocaleString()}<br/>
