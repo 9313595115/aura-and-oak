@@ -106,10 +106,13 @@ Restart the server after editing `.env`.
 
 ## Email
 
-Without SMTP, emails are printed in the server log. Add `SMTP_*` to send real
-email (Gmail app password, Zoho, SendGrid, Amazon SES…). Emails sent:
-order confirmation, "your order shipped" (with tracking), cancellation,
-password reset, and new-order / new-message alerts to `STORE_NOTIFY_EMAIL`.
+Without an email service, emails are printed in the server log. To send real
+emails, either set `BREVO_API_KEY` + `MAIL_FROM` (Brevo's free HTTPS API, 300
+emails/day — **required on Render's free plan, which blocks SMTP ports**), or
+set `SMTP_*` for any SMTP server. Verify the `MAIL_FROM` address in Brevo →
+Senders before sending. Emails sent: order confirmation, "your order shipped"
+(with tracking), cancellation, password reset, and new-order / new-message
+alerts to `STORE_NOTIFY_EMAIL`.
 
 ---
 

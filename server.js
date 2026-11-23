@@ -103,28 +103,57 @@ const pool = mysql.createPool({
 });
 
 // ── Mail ─────────────────────────────────────────────────────
-const mailTransport = process.env.SMTP_HOST
+// Two ways to send:
+//  1. BREVO_API_KEY set → Brevo's HTTPS email API (works on hosts that block
+//     SMTP ports, e.g. Render's free plan). Free for 300 emails/day.
+//  2. SMTP_HOST set → any SMTP server (Gmail, Zoho, your host's mailbox…).
+//  Neither → emails are printed to the server log (useful for testing).
+const BREVO_API_KEY = process.env.BREVO_API_KEY || "";
+const mailTransport = !BREVO_API_KEY && process.env.SMTP_HOST
   ? nodemailer.createTransport({
       host: process.env.SMTP_HOST,
       port: Number(process.env.SMTP_PORT || 587),
       secure: process.env.SMTP_SECURE === "true",
       auth: { user: process.env.SMTP_USER, pass: process.env.SMTP_PASS },
+      connectionTimeout: 10000, greetingTimeout: 10000, socketTimeout: 15000,
     })
   : null;
 
+// "Shop Name <shop@example.com>" → { name, email }
+function parseFrom(v) {
+  const m = /^\s*(.*?)\s*<([^>]+)>\s*$/.exec(v || "");
+  return m ? { name: m[1].replace(/^"|"$/g, "") || STORE.name, email: m[2].trim() } : { name: STORE.name, email: (v || "").trim() };
+}
+const MAIL_FROM = parseFrom(process.env.MAIL_FROM || process.env.SMTP_FROM || (process.env.SMTP_USER ? `${STORE.name} <${process.env.SMTP_USER}>` : `${STORE.name} <${STORE.email}>`));
+
 async function sendMail(to, subject, html) {
   if (!to) return { sent: false };
+  if (BREVO_API_KEY) {
+    try {
+      const r = await fetch("https://api.brevo.com/v3/smtp/email", {
+        method: "POST", signal: AbortSignal.timeout(15000),
+        headers: { "api-key": BREVO_API_KEY, "Content-Type": "application/json", Accept: "application/json" },
+        body: JSON.stringify({ sender: MAIL_FROM, to: [{ email: to }], subject, htmlContent: html }),
+      });
+      if (!r.ok) throw new Error(`Brevo ${r.status}: ${(await r.text()).slice(0, 200)}`);
+      return { sent: true };
+    } catch (e) {
+      console.error("Email send failed (Brevo):", e.message);
+      return { sent: false, error: e.message };
+    }
+  }
   if (!mailTransport) {
-    // No SMTP configured: print the email (and any links in it, e.g. password-reset) to the server log
+    // No email service configured: print the email (and any links in it, e.g. password-reset) to the server log
     const links = [...html.matchAll(/href="([^"]+)"/g)].map((m) => m[1].replace(/&amp;/g, "&"));
-    console.log(`\n✉️  [DEV EMAIL — no SMTP] To: ${to}\nSubject: ${subject}\n${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600)}${links.length ? "\nLinks: " + links.join("  ") : ""}\n`);
+    console.log(`\n✉️  [DEV EMAIL — no email service] To: ${to}\nSubject: ${subject}\n${html.replace(/<[^>]+>/g, " ").replace(/\s+/g, " ").slice(0, 600)}${links.length ? "\nLinks: " + links.join("  ") : ""}\n`);
     return { sent: false, simulated: true };
   }
   try {
-    await mailTransport.sendMail({ from: process.env.SMTP_FROM || `${STORE.name} <no-reply@example.com>`, to, subject, html });
+    await mailTransport.sendMail({ from: `${MAIL_FROM.name} <${MAIL_FROM.email}>`, to, subject, html });
     return { sent: true };
   } catch (e) {
-    console.error("Email send failed:", e.message);
+    console.error("Email send failed (SMTP):", e.message, /timeout|ECONNREFUSED|ETIMEDOUT/i.test(e.message)
+      ? "— the host may block SMTP ports (Render's free plan does). Use BREVO_API_KEY instead." : "");
     return { sent: false, error: e.message };
   }
 }
