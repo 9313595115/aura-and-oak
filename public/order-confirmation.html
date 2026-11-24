@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#F7F3EE" />
-  <title>Your Order — Eagle CNC Art & Craft</title>
+  <title>Your order — Eagle CNC Art & Craft</title>
 <meta name="robots" content="noindex" />
 <meta name="description" content="Your Eagle CNC Art & Craft order is confirmed." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
@@ -105,11 +105,11 @@
         ${order.tracking_number ? `<p class="sub">Tracking${order.carrier ? ' (' + esc(order.carrier) + ')' : ''}: <strong>${esc(order.tracking_number)}</strong></p>` : ''}
 
         <div class="order-card">
-          <h2>Order Summary</h2>
+          <h2>Order summary</h2>
           ${order.items.map(i => `
             <div class="oc-item">
               <img src="${esc(i.image_url)}" alt="${esc(i.name)}" />
-              <div class="oc-item-info"><strong>${esc(i.name)}</strong><br/><span style="color:var(--text2)">Qty ${Number(i.quantity)}</span></div>
+              <div class="oc-item-info"><strong>${esc(i.name)}</strong>${i.customization ? `<div class="item-custom">${esc(i.customization)}</div>` : '<br/>'}<span style="color:var(--text2)">Qty ${Number(i.quantity)}</span></div>
               <div>${fmt(i.price * i.quantity)}</div>
             </div>`).join('')}
           <div class="oc-row"><span>Subtotal</span><span>${fmt(order.subtotal)}</span></div>
@@ -120,7 +120,7 @@
         </div>
 
         <div class="order-card">
-          <h2>Shipping To</h2>
+          <h2>Shipping to</h2>
           <p class="oc-address">
             ${esc(order.shipping_full_name)}<br/>
             ${esc(order.shipping_line1)}${order.shipping_line2 ? ', ' + esc(order.shipping_line2) : ''}<br/>
@@ -130,7 +130,7 @@
         </div>
 
         <div class="actions">
-          <a href="/shop" class="btn-primary">Continue Shopping</a>
+          <a href="/shop" class="btn-primary">Continue shopping</a>
           <a href="account.html" class="btn-secondary">${isLoggedIn() ? 'View Order History' : 'Create an Account'}</a>
         </div>
         <p class="lookup-note">Questions about this order? <a href="/contact" style="text-decoration:underline">Contact us</a> with your order number.</p>

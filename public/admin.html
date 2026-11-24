@@ -133,7 +133,7 @@
     <label for="adminUsername">Username</label><input type="text" id="adminUsername" autocomplete="username" value="admin" />
     <label for="adminPassword">Password</label><input type="password" id="adminPassword" autocomplete="current-password" />
     <p class="form-error" id="loginError" role="alert"></p>
-    <button class="btn-primary block" type="submit">Sign In</button>
+    <button class="btn-primary block" type="submit">Sign in</button>
     <p class="hint" style="margin-top:16px">First time? Your admin password is printed in the server log on first start (or set ADMIN_INITIAL_PASSWORD in .env).</p>
   </form>
 </div>
@@ -257,7 +257,7 @@
           <label for="curPass">Current password</label><input type="password" id="curPass" autocomplete="current-password" />
           <label for="newPass">New password (10+ characters)</label><input type="password" id="newPass" autocomplete="new-password" />
           <p class="form-error" id="pwError" role="alert"></p>
-          <button class="btn-primary" type="submit">Update Password</button>
+          <button class="btn-primary" type="submit">Update password</button>
         </form>
         <div class="card">
           <h2 style="margin-top:0">Store details</h2>
@@ -292,6 +292,16 @@
     <div class="gallery-list" id="pmGallery"></div>
     <input type="file" id="pmGalleryFile" accept="image/png,image/jpeg,image/webp" multiple style="border:none;padding:0" />
     <label for="pmDescription">Description</label><textarea id="pmDescription" maxlength="10000"></textarea>
+    <label for="pmOptions">Customisation options <span style="font-weight:400;text-transform:none;letter-spacing:0">(optional — one per line)</span></label>
+    <textarea id="pmOptions" maxlength="4000" spellcheck="false" style="font-family:ui-monospace,Menlo,Consolas,monospace;font-size:13px;min-height:120px" placeholder="text* Family name | 30 | The Sharma Family&#10;choice Size: 45 × 15 cm, 60 × 20 cm (+700)&#10;preview nameplate&#10;days 5"></textarea>
+    <details class="hint" style="margin:-4px 0 14px"><summary style="cursor:pointer">How to write options</summary>
+      <div style="margin-top:6px;line-height:1.7">
+        <code>text* Label | max letters | example</code> — a text box customers must fill in (leave out <code>*</code> to make it optional)<br/>
+        <code>choice Label: Option A, Option B (+500)</code> — buttons to pick from; the first is the default, <code>(+500)</code> adds ₹500<br/>
+        <code>preview nameplate</code> or <code>preview round</code> — live preview of the customer's text<br/>
+        <code>days 5</code> — extra working days to make it (shows “Made to order” and adjusts the delivery estimate)<br/>
+        Leave the box empty for products that can't be customised.
+      </div></details>
     <div class="checkbox-row"><input type="checkbox" id="pmFeatured" /><label for="pmFeatured" style="margin:0;text-transform:none;font-weight:500">Featured on homepage</label></div>
     <div class="checkbox-row"><input type="checkbox" id="pmActive" checked /><label for="pmActive" style="margin:0;text-transform:none;font-weight:500">Visible in the store</label></div>
     <details>
@@ -493,14 +503,14 @@
       const o = await adminApi(`/api/admin/orders/${id}`);
       const cancelled = o.status === 'cancelled';
       $('orderModalBody').innerHTML = `
-        <p><strong>${esc(o.order_number)}</strong> · Order: ${statusPill(o.status)} · Payment: <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
+        <p><strong>${esc(o.order_number)}</strong> · Order: ${statusPill(o.status)} · Payment: <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'cod' ? ' <span class="pill" style="background:#FFF4DE;color:#5A3E12">cash on delivery</span>' : o.payment_mode === 'razorpay' ? ' <span class="pill">Razorpay</span>' : ''}${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
         <div class="kv">
           ${esc(o.email)}${o.shipping_phone ? ' · ' + esc(o.shipping_phone) : ''}<br/>
           Placed ${new Date(o.created_at).toLocaleString()}<br/>
           <b>Ship to:</b> ${esc(o.shipping_full_name)}, ${esc(o.shipping_line1)}${o.shipping_line2 ? ', ' + esc(o.shipping_line2) : ''}, ${esc(o.shipping_city)}, ${esc(o.shipping_state)} ${esc(o.shipping_postal_code)}, ${esc(o.shipping_country)}
         </div>
         <div class="order-lines">
-          ${o.items.map(i => `<div><span>${esc(i.name)} × ${Number(i.quantity)}</span><span>${fmt(i.price * i.quantity)}</span></div>`).join('')}
+          ${o.items.map(i => `<div><span>${esc(i.name)} × ${Number(i.quantity)}${i.customization ? `<br/><b style="display:inline-block;margin-top:4px;background:#FFF4DE;color:#5A3E12;padding:3px 7px;border-radius:4px;font-weight:600;font-size:12px">✎ ${esc(i.customization)}</b>` : ''}</span><span>${fmt(i.price * i.quantity)}</span></div>`).join('')}
           <div><span>Subtotal</span><span>${fmt(o.subtotal)}</span></div>
           ${Number(o.discount_amount) > 0 ? `<div><span>Discount (${esc(o.discount_code)})</span><span>-${fmt(o.discount_amount)}</span></div>` : ''}
           <div><span>Shipping</span><span>${Number(o.shipping_amount) ? fmt(o.shipping_amount) : 'Free'}</span></div>
@@ -519,7 +529,8 @@
         <p class="hint">Cancelling puts the items back in stock. Refund the payment separately below.</p>
         <div class="modal-actions">
           <button class="btn-primary" onclick="saveOrder(${Number(o.id)})">Save</button>
-          ${o.payment_status === 'paid' ? `<button class="btn-secondary" onclick="refundOrder(${Number(o.id)}, '${o.payment_mode}')">Refund ${fmt(o.total)}</button>` : ''}
+          ${o.payment_status === 'paid' && o.payment_mode !== 'cod' ? `<button class="btn-secondary" onclick="refundOrder(${Number(o.id)}, '${o.payment_mode}')">Refund ${fmt(o.total)}</button>` : ''}
+          ${o.payment_status === 'unpaid' ? `<button class="btn-secondary" onclick="markPaid(${Number(o.id)})">Mark ${fmt(o.total)} as paid</button>` : ''}
           <button class="btn-secondary" onclick="closeModal('orderModalOverlay')">Close</button>
         </div>`;
       $('orderModalOverlay').classList.add('open');
@@ -535,8 +546,13 @@
       loadOrders(); loadOverview();
     } catch (e) { showToast(e.message); }
   }
+  async function markPaid(id) {
+    if (!confirm('Record that the cash for this order has been collected?')) return;
+    try { await adminApi(`/api/admin/orders/${id}/mark-paid`, { method: 'POST' }); showToast('Marked as paid'); viewOrder(id); loadOrders(); }
+    catch (e) { showToast(e.message); }
+  }
   async function refundOrder(id, mode) {
-    if (!confirm(mode === 'stripe' ? 'Refund the full amount to the customer\'s card via Stripe?' : 'Mark this test order as refunded?')) return;
+    if (!confirm(mode === 'stripe' ? 'Refund the full amount to the customer\'s card via Stripe?' : mode === 'razorpay' ? 'Refund the full amount to the customer via Razorpay? It usually reaches them in 5–7 working days.' : 'Mark this test order as refunded?')) return;
     try { await adminApi(`/api/admin/orders/${id}/refund`, { method: 'POST' }); showToast('Refunded'); viewOrder(id); loadOrders(); }
     catch (e) { showToast(e.message); }
   }
@@ -583,6 +599,7 @@
     $('pmImagePreview').src = p ? p.image_url || '' : '';
     $('pmStock').value = p ? p.stock_qty : 0;
     $('pmDescription').value = p ? p.description || '' : '';
+    $('pmOptions').value = p ? p.options_text || '' : '';
     $('pmFeatured').checked = p ? !!p.is_featured : false;
     $('pmActive').checked = p ? !!p.is_active : true;
     $('pmCategory').value = p && p.category_id ? p.category_id : '';
@@ -619,7 +636,7 @@
     const id = $('pmId').value;
     const payload = {
       name: $('pmName').value.trim(), price: Number($('pmPrice').value), category_id: Number($('pmCategory').value) || null,
-      image_url: $('pmImage').value.trim(), stock_qty: Number($('pmStock').value) || 0, description: $('pmDescription').value.trim(),
+      image_url: $('pmImage').value.trim(), stock_qty: Number($('pmStock').value) || 0, description: $('pmDescription').value.trim(), options_text: $('pmOptions').value,
       is_featured: $('pmFeatured').checked, is_active: $('pmActive').checked, gallery: pmGallery,
       slug: $('pmSlug').value.trim(), meta_title: $('pmMetaTitle').value.trim(), meta_description: $('pmMetaDesc').value.trim(),
     };

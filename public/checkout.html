@@ -68,6 +68,11 @@
   #card-element-wrap { padding: 12px 14px; border: 1.5px solid var(--muted); border-radius: var(--radius); background: var(--white); }
   .sim-note { font-size: 12px; color: var(--text2); background: var(--bg2); padding: 12px 14px; border-radius: 6px; margin-top: 10px; }
 
+  .pay-methods { display: flex; flex-direction: column; gap: 10px; margin-bottom: 12px; }
+  .pay-option { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; border: 1.5px solid var(--muted); border-radius: 10px; cursor: pointer; background: #fff; text-transform: none; letter-spacing: 0; color: var(--text); font-size: 14px; font-weight: 400; margin: 0; }
+  .pay-option input { margin-top: 3px; width: 18px; height: 18px; flex: none; }
+  .pay-option:has(input:checked) { border-color: var(--primary); box-shadow: 0 0 0 3px rgba(160, 126, 89, .18); }
+  .pay-body strong { display: block; font-size: 15px; } .pay-body small { display: block; color: var(--text2); font-size: 13px; margin-top: 2px; line-height: 1.45; }
   .place-order-btn {
     width: 100%; padding: 16px; background: var(--primary); color: #fff; font-size: 14px; font-weight: 700;
     text-transform: uppercase; letter-spacing: .06em; border-radius: var(--radius); margin-top: 20px;
@@ -118,12 +123,12 @@
     <h1 class="page-title">Checkout</h1>
 
     <div class="section-block" id="savedAddressBlock" style="display:none">
-      <h2>Saved Addresses</h2>
+      <h2>Saved addresses</h2>
       <div class="saved-addresses" id="savedAddressList"></div>
     </div>
 
     <div class="section-block">
-      <h2>Contact & Shipping</h2>
+      <h2>Contact & shipping</h2>
       <div class="form-row single"><div><label for="email">Email</label><input type="email" id="email" autocomplete="email" inputmode="email" autocapitalize="off" spellcheck="false" placeholder="you@example.com" /></div></div>
       <div class="form-row single"><div><label for="fullName">Full Name</label><input type="text" id="fullName" autocomplete="name" placeholder="Your full name" /></div></div>
       <div class="form-row single"><div><label for="line1">Address Line 1</label><input type="text" id="line1" autocomplete="address-line1" placeholder="House no., street" /></div></div>
@@ -147,6 +152,7 @@
     <div class="section-block">
       <h2>Payment</h2>
       <div id="paymentArea">
+        <div class="pay-methods" id="payMethods" role="radiogroup" aria-label="Payment method"></div>
         <div id="card-element-wrap"><div id="card-element"></div></div>
         <p class="sim-note" id="simNote" style="display:none">
           <strong>Preview mode:</strong> no payment is taken for this order. Online payment (UPI, cards) will be switched on at launch.
@@ -155,17 +161,18 @@
     </div>
 
     <p class="form-error" id="formError" role="alert"></p>
-    <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">Place Order</button>
+    <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">Place order</button>
     <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">By placing your order you agree to our <a href="/shipping" style="text-decoration:underline">shipping</a> and <a href="/returns" style="text-decoration:underline">returns</a> policies.</p>
   </div>
 
   <div class="order-summary-card">
-    <h2>Order Summary</h2>
+    <h2>Order summary</h2>
     <div id="summaryItems"></div>
     <div class="summary-row"><span>Subtotal</span><span id="sumSubtotal">$0.00</span></div>
     <div class="summary-row" id="sumDiscountRow" style="display:none"><span id="sumDiscountLabel">Discount</span><span id="sumDiscount">-$0.00</span></div>
     <div class="summary-row"><span>Shipping</span><span id="sumShipping">$0.00</span></div>
     <div class="summary-row" id="sumTaxRow" style="display:none"><span id="sumTaxLabel">Tax</span><span id="sumTax">$0.00</span></div>
+    <div class="summary-row" id="sumCodRow" style="display:none"><span>Cash on delivery fee</span><span id="sumCod"></span></div>
     <div class="summary-row total"><span>Total</span><span id="sumTotal">$0.00</span></div>
     <form class="promo-row" id="checkoutPromoForm" onsubmit="event.preventDefault(); applyCheckoutPromo();">
       <label for="checkoutPromoInput" class="sr-only">Promo code</label>
@@ -182,6 +189,7 @@
 <script src="https://js.stripe.com/v3/"></script>
 <script>
   let discountCode = sessionStorage.getItem('ao_promo') || '';
+  let payMethod = 'online';
   let stripe = null, cardElement = null;
 
   function renderSummary({ items, totals, discount }) {
@@ -189,7 +197,7 @@
       <div class="summary-item">
         <img src="${esc(i.image_url)}" alt="${esc(i.name)}" />
         <div class="summary-item-info">
-          <div class="summary-item-name">${esc(i.name)}</div>
+          <div class="summary-item-name">${esc(i.name)}</div>${i.customization_summary ? `<div class="item-custom">${esc(i.customization_summary)}</div>` : ''}
           <div class="summary-item-qty">Qty ${Number(i.quantity)}</div>
         </div>
         <div class="summary-item-price">${fmt(i.price * i.quantity)}</div>
@@ -201,9 +209,12 @@
     document.getElementById('sumDiscountLabel').textContent = discount.valid ? `Discount (${discount.code})` : 'Discount';
     document.getElementById('sumDiscount').textContent = '-' + fmt(totals.discount_amount);
     document.getElementById('sumTaxRow').style.display = totals.tax_amount > 0 ? '' : 'none';
+    document.getElementById('sumCodRow').style.display = totals.cod_fee > 0 ? '' : 'none';
+    document.getElementById('sumCod').textContent = fmt(totals.cod_fee || 0);
     document.getElementById('sumTaxLabel').textContent = storeInfo().tax_label || 'Tax';
     document.getElementById('sumTax').textContent = fmt(totals.tax_amount);
-    document.getElementById('placeOrderBtn').textContent = `Place Order · ${fmt(totals.total)}`;
+    const pob = document.getElementById('placeOrderBtn');
+    pob.textContent = `${pob.dataset.verb || 'Place order'} · ${fmt(totals.total)}`;
   }
 
   // ── Promo code at checkout (also picks up a code applied on the cart page)
@@ -221,7 +232,7 @@
     const m = document.getElementById('checkoutPromoMsg'); m.textContent = text || ''; m.className = 'promo-msg ' + (ok ? 'ok' : 'err');
   }
   async function refreshTotals() {
-    const data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode }) });
+    const data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode, payment_method: payMethod }) });
     renderSummary(data); setPromoUi(data.discount); return data;
   }
   async function applyCheckoutPromo() {
@@ -296,15 +307,56 @@
   }
 
   function initPayment(config) {
-    if (!config.simulated && config.stripePublishableKey && window.Stripe) {
+    const pm = config.payments || {}, box = document.getElementById('payMethods');
+    const methods = [];
+    if (pm.razorpay) methods.push(['online', 'Pay online', 'UPI, cards, netbanking & wallets — secured by Razorpay', '/images/brand/pay-upi.svg']);
+    else if (!config.simulated && config.stripePublishableKey && window.Stripe) methods.push(['card', 'Card payment', 'Visa, Mastercard, RuPay — secured by Stripe', '']);
+    else methods.push(['online', 'Pay online', 'Preview mode — no payment is taken yet', '']);
+    if (pm.cod) methods.push(['cod', 'Cash on delivery', (pm.codFee > 0 ? fmt(pm.codFee).replace(/\.00$/, '') + ' extra · ' : '') + 'pay when your order arrives' + (pm.codMax > 0 ? ` · orders up to ${fmt(pm.codMax).replace(/\.00$/, '')}` : ''), '']);
+    payMethod = methods[0][0];
+    box.innerHTML = methods.length > 1 || pm.razorpay || pm.cod ? methods.map(([id, title, sub], i) => `
+      <label class="pay-option"><input type="radio" name="payMethod" value="${id}" ${i === 0 ? 'checked' : ''} />
+        <span class="pay-body"><strong>${esc(title)}</strong><small>${esc(sub)}</small></span></label>`).join('') : '';
+    box.querySelectorAll('input[name=payMethod]').forEach(r => r.addEventListener('change', async () => {
+      payMethod = r.value; showPaymentPanels(config); try { await refreshTotals(); } catch {}
+    }));
+    if (methods.some(m => m[0] === 'card')) {
       stripe = Stripe(config.stripePublishableKey);
-      cardElement = stripe.elements().create('card', { hidePostalCode: true, style: { base: { fontSize: '15px', color: '#2E2419' } } });
+      cardElement = stripe.elements().create('card', { hidePostalCode: true, style: { base: { fontSize: '16px', color: '#3E362B' } } });
       cardElement.mount('#card-element');
-    } else {
-      document.getElementById('card-element-wrap').style.display = 'none';
-      document.getElementById('simNote').style.display = 'block';
+    }
+    showPaymentPanels(config);
+  }
+  function showPaymentPanels(config) {
+    document.getElementById('card-element-wrap').style.display = payMethod === 'card' ? '' : 'none';
+    document.getElementById('simNote').style.display = config.simulated && payMethod === 'online' ? 'block' : 'none';
+    const btn = document.getElementById('placeOrderBtn');
+    if (btn && !btn.disabled) {
+      btn.dataset.verb = payMethod === 'cod' ? 'Place order' : (config.payments || {}).razorpay ? 'Pay' : 'Place order';
+      const amount = btn.textContent.split('·')[1];
+      if (amount) btn.textContent = `${btn.dataset.verb} ·${amount}`;
     }
   }
+  function loadRazorpay() {
+    if (window.Razorpay) return Promise.resolve();
+    return new Promise((ok, fail) => { const sc = document.createElement('script'); sc.src = 'https://checkout.razorpay.com/v1/checkout.js'; sc.onload = ok; sc.onerror = () => fail(new Error('Could not load the payment window. Please check your connection and try again.')); document.head.appendChild(sc); });
+  }
+  function payWithRazorpay(intent, email, shipping) {
+    return new Promise((resolve, reject) => {
+      const s = storeInfo();
+      const rz = new Razorpay({
+        key: intent.keyId, order_id: intent.razorpayOrderId, amount: intent.amount, currency: intent.currency,
+        name: s.name || 'Eagle CNC Art & Craft', description: 'Order payment', image: location.origin + '/images/logo.png',
+        prefill: { name: shipping.full_name, email, contact: shipping.phone || '' },
+        theme: { color: '#3E362B' },
+        handler: (r) => resolve(r),
+        modal: { ondismiss: () => reject(new Error('Payment was cancelled — your cart is saved, you can try again.')) },
+      });
+      rz.on('payment.failed', (r) => reject(new Error((r.error && r.error.description) || 'Payment failed. Please try again or choose another method.')));
+      rz.open();
+    });
+  }
+
 
   async function placeOrder() {
     showError('');
@@ -329,9 +381,17 @@
     btn.disabled = true; btn.textContent = 'Processing…';
 
     try {
-      const intent = await api('/api/checkout/intent', { method: 'POST', body: JSON.stringify({ discount_code: discountCode, email }) });
-      let paymentIntentId = null;
-      if (!intent.simulated) {
+      const intent = await api('/api/checkout/intent', { method: 'POST', body: JSON.stringify({ discount_code: discountCode, email, payment_method: payMethod }) });
+      let paymentIntentId = null, rz = {};
+      if (intent.method === 'razorpay') {
+        btn.textContent = 'Opening payment…';
+        await loadRazorpay();
+        const r = await payWithRazorpay(intent, email, shipping);
+        btn.textContent = 'Confirming…';
+        rz = { razorpay_order_id: r.razorpay_order_id, razorpay_payment_id: r.razorpay_payment_id, razorpay_signature: r.razorpay_signature };
+      } else if (intent.method === 'cod' || intent.simulated) {
+        // nothing to collect now
+      } else if (!intent.simulated) {
         if (!stripe || !cardElement) throw new Error('Card payments are unavailable right now. Please refresh and try again.');
         const result = await stripe.confirmCardPayment(intent.clientSecret, {
           payment_method: { card: cardElement, billing_details: { name: shipping.full_name, email,
@@ -343,7 +403,7 @@
 
       const done = await api('/api/checkout/complete', {
         method: 'POST',
-        body: JSON.stringify({ payment_intent_id: paymentIntentId, email, shipping, discount_code: discountCode,
+        body: JSON.stringify({ payment_intent_id: paymentIntentId, email, shipping, discount_code: discountCode, payment_method: intent.method === 'cod' ? 'cod' : payMethod, ...rz,
           save_address: document.getElementById('saveAddress')?.checked || false }),
       });
       sessionStorage.removeItem('ao_promo');
@@ -357,7 +417,7 @@
   async function init() {
     const config = await getConfig();
     let data;
-    try { data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode }) }); }
+    try { data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode, payment_method: payMethod }) }); }
     catch { data = { items: [] }; }
 
     if (!data.items.length) {

@@ -79,31 +79,51 @@
   <link rel="stylesheet" href="/css/responsive.css" />
   <link rel="stylesheet" href="/css/brand.css" />
 </head>
-<body>
+<body class="has-site-nav">
 
-<nav>
-  <a href="/" class="nav-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" /></a>
-  <div class="nav-actions">
+<!-- SITE HEADER (shared) -->
+  <nav id="navbar" class="site-nav" aria-label="Main">
+    <a href="/" class="nav-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" /></a>
+    <div class="nav-links"><a href="/shop">Shop</a><a href="/work">Work</a><a href="/#process">Process</a><a href="/contact">Contact</a></div>
+    <div class="nav-actions">
       <a href="/contact?topic=custom#contactForm" class="nav-quote">Get a quote</a>
+      <span class="nav-account-slot"></span>
+      <a href="#" class="cart-btn" id="cartBtn" data-cart-trigger>Cart <span class="cart-count" id="cartCount" style="display:none">0</span></a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-controls="mobileNavDrawer"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+  <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+  <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-label="Menu">
+    <div class="mobile-nav-drawer-header">
+      <span class="drawer-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></span>
+      <button class="drawer-close" id="mobileNavClose" aria-label="Close menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <a href="/contact?topic=custom#contactForm" class="drawer-quote"><strong>Get a quote</strong></a>
     <a href="/shop">Shop</a>
+    <a href="/work">Work</a>
+    <a href="/#process">Process</a>
     <a href="/contact">Contact</a>
-    <a href="cart.html">Cart</a>
+    <a href="/account.html">Account</a>
+    <a href="/account.html?tab=wishlist">Wishlist</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/shipping">Shipping</a>
+    <a href="/returns">Returns</a>
   </div>
-</nav>
+  <!-- /SITE HEADER -->
 
 <div id="authWrap" class="wrap" style="display:none">
   <h1 class="page-title">Account</h1>
   <p class="sub">Sign in to view your orders, saved addresses, and wishlist.</p>
   <div class="auth-tabs" role="tablist">
-    <button class="auth-tab active" id="tabLogin" role="tab" onclick="switchAuthTab('login')">Sign In</button>
-    <button class="auth-tab" id="tabSignup" role="tab" onclick="switchAuthTab('signup')">Create Account</button>
+    <button class="auth-tab active" id="tabLogin" role="tab" onclick="switchAuthTab('login')">Sign in</button>
+    <button class="auth-tab" id="tabSignup" role="tab" onclick="switchAuthTab('signup')">Create account</button>
   </div>
 
   <form id="loginPanel" onsubmit="event.preventDefault(); doLogin();">
     <label for="loginEmail">Email</label><input type="email" id="loginEmail" autocomplete="email" required />
     <label for="loginPassword">Password</label><input type="password" id="loginPassword" autocomplete="current-password" required />
     <p class="form-error" id="loginError" role="alert"></p>
-    <button class="btn-primary" type="submit">Sign In</button>
+    <button class="btn-primary" type="submit">Sign in</button>
     <button type="button" class="forgot-link" onclick="switchAuthTab('forgot')">Forgot your password?</button>
   </form>
 
@@ -112,7 +132,7 @@
     <label for="signupEmail">Email</label><input type="email" id="signupEmail" autocomplete="email" required />
     <label for="signupPassword">Password (8+ characters)</label><input type="password" id="signupPassword" autocomplete="new-password" minlength="8" required />
     <p class="form-error" id="signupError" role="alert"></p>
-    <button class="btn-primary" type="submit">Create Account</button>
+    <button class="btn-primary" type="submit">Create account</button>
   </form>
 
   <form id="forgotPanel" style="display:none" onsubmit="event.preventDefault(); doForgot();">
@@ -150,14 +170,31 @@
       <label for="curPass">Current Password</label><input type="password" id="curPass" autocomplete="current-password" required />
       <label for="newPass">New Password (8+ characters)</label><input type="password" id="newPass" autocomplete="new-password" minlength="8" required />
       <p class="form-error" id="pwError" role="alert"></p>
-      <button class="btn-primary" type="submit">Update Password</button>
+      <button class="btn-primary" type="submit">Update password</button>
     </form>
   </div>
 </div>
 
 <div class="toast" id="toast"></div>
 
-<script src="/js/common.js"></script>
+<!-- SITE FOOTER (shared) -->
+  <footer class="site-footer">
+    <div class="sf-grid">
+      <div class="sf-brand">
+        <div class="footer-brand brand-logo"><img src="/images/brand/eagle-logo-reversed-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></div>
+        <p class="footer-tagline">CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.</p>
+        <div class="footer-nap" data-store-nap></div>
+        <div class="sf-social" data-store-social></div>
+      </div>
+      <div class="footer-col"><h3>Shop</h3><ul><li><a href="/shop">All products</a></li><li><a href="/shop/name-plates">Name plates</a></li><li><a href="/shop/mandir">Mandir &amp; spiritual</a></li><li><a href="/shop/wall-art">Wall art</a></li><li><a href="/shop/gifts">Gifts</a></li></ul></div>
+      <div class="footer-col"><h3>Help</h3><ul><li><a href="/shipping">Shipping</a></li><li><a href="/returns">Returns</a></li><li><a href="/order-confirmation.html">Track an order</a></li><li><a href="/contact">Contact</a></li></ul></div>
+      <div class="footer-col"><h3>Studio</h3><ul><li><a href="/work">Our work</a></li><li><a href="/#process">How it works</a></li><li><a href="/contact?topic=custom#contactForm">Custom orders</a></li><li><a href="/account.html">My account</a></li></ul></div>
+    </div>
+    <div class="sf-bottom"><span>&copy; <span data-year>2026</span> Eagle CNC Art &amp; Craft</span><span class="sf-secure">🔒 Secure checkout</span></div>
+  </footer>
+  <!-- /SITE FOOTER -->
+
+  <script src="/js/common.js"></script>
 <script>
   const PANELS = ['login', 'signup', 'forgot'];
   function switchAuthTab(tab) {
@@ -230,7 +267,7 @@
         <div class="order-row">
           <div class="order-row-top"><span>${esc(o.order_number)}</span><span class="order-status">${esc(o.status === 'paid' ? 'confirmed' : o.status)}</span></div>
           <div class="order-row-meta">${new Date(o.created_at).toLocaleDateString()} · ${fmt(o.total)} · ${o.items.reduce((s, i) => s + i.quantity, 0)} item(s)${o.tracking_number ? ' · Tracking: ' + esc(o.tracking_number) : ''}</div>
-          <div class="order-row-items">${o.items.map(i => esc(i.name) + ' × ' + Number(i.quantity)).join(', ')}</div>
+          <div class="order-row-items">${o.items.map(i => esc(i.name) + ' × ' + Number(i.quantity) + (i.customization ? ` <span class="item-custom" style="display:inline">(${esc(i.customization)})</span>` : '')).join(', ')}</div>
           <div class="order-row-items" style="margin-top:8px"><a href="order-confirmation.html?order=${encodeURIComponent(o.order_number)}" class="link-btn">View Details →</a></div>
         </div>`).join('');
     } catch { panel.innerHTML = `<p class="empty-note">Could not load orders.</p>`; }

@@ -93,6 +93,13 @@ async function addIndex(conn, table, index, ddl) {
   await addColumn(conn, "reviews", "verified", "TINYINT(1) NOT NULL DEFAULT 0");
   await addColumn(conn, "reviews", "is_hidden", "TINYINT(1) NOT NULL DEFAULT 0");
 
+  // ── Customisation, Razorpay and Cash on Delivery
+  await addColumn(conn, "products", "options", "TEXT");
+  await addColumn(conn, "cart_items", "customization", "TEXT");
+  await addColumn(conn, "cart_items", "custom_key", "VARCHAR(600) NOT NULL DEFAULT ''");
+  await addColumn(conn, "order_items", "customization", "TEXT");
+  await conn.query("ALTER TABLE orders MODIFY payment_mode ENUM('stripe','simulated','razorpay','cod') NOT NULL DEFAULT 'simulated'");
+
   // ── One-time rebrand: Eagle CNC Art & Craft home-decor samples → Eagle CNC Art & Craft catalogue.
   // Runs only while the old sample rows still exist (matched by their original slugs) and
   // updates them IN PLACE, so order history and carts keep pointing at valid products.
@@ -138,6 +145,27 @@ async function addIndex(conn, table, index, ddl) {
     console.log("Loading sample data (existing rows are left alone)…");
     await conn.query(fs.readFileSync(path.join(__dirname, "..", "database", "seed.sql"), "utf8"));
   }
+
+  // Starter customisation options for the sample products (only where none are set,
+  // so anything the owner edits in the admin panel is never overwritten)
+  const { parseOptionsText } = require("../lib/options");
+  const starterOptions = {
+    "personalised-wooden-name-plate": "text* Family name | 30 | The Sharma Family\ntext House number | 12 | A-204\nchoice Size: 45 × 15 cm, 60 × 20 cm (+700)\nchoice Material: Walnut-stained MDF, Solid teak (+600), Acrylic on wood (+400)\npreview nameplate\ndays 5",
+    "round-welcome-family-board": "text* Family name | 24 | The Patels\ntext Greeting | 20 | Welcome\nchoice Size: 30 cm, 40 cm (+400)\npreview round\ndays 5",
+    "geometric-wooden-coasters-set": "text Initials or logo text | 12 | A & R\nchoice Finish: Natural birch, Walnut stain (+100)\ndays 3",
+    "wooden-couple-keychains": "text Names on the back | 24 | Riya & Arjun\ndays 3",
+    "engraved-wooden-photo-frame": "text* Message to engrave | 40 | Happy anniversary, Maa & Papa\ndays 3",
+    "vintage-wooden-desk-clock": "text Name or date on the base | 24\ndays 3",
+    "carved-mandala-wall-art": "choice Size: 45 × 45 cm, 60 × 60 cm (+900), 90 × 90 cm (+2200)\nchoice Finish: Walnut stain, Natural wood, Matte black (+200)",
+    "world-map-wooden-wall-art": "choice Size: 120 × 60 cm, 150 × 75 cm (+1500)\nchoice Finish: Natural wood tones, Walnut, White & wood (+300)",
+    "om-jali-mandir-panel": "choice Size: 60 × 90 cm, 90 × 120 cm (+1400)\nchoice Finish: Teak tone, White, Gold accent (+500)\ndays 4",
+    "ganesha-mandir-back-panel": "choice Size: 45 × 60 cm, 60 × 90 cm (+1800)\nchoice Finish: Natural polish, Teak stain",
+    "decorative-jali-partition-panel": "choice Finish: Teak, White, Black, Custom colour (+500)\ntext Height if not 210 cm | 20 | e.g. 240 cm\ndays 7",
+    "3d-carved-door-panel": "text* Door size (W × H cm) | 30 | e.g. 90 × 210 cm\nchoice Material: HDHMR (paint finish), Solid teak (+6000)\ndays 10",
+    "minimal-wooden-wall-clock": "choice Rim finish: Natural oak, Walnut",
+  };
+  for (const [slug, text] of Object.entries(starterOptions))
+    await conn.query("UPDATE products SET options = ? WHERE slug = ? AND options IS NULL", [JSON.stringify(parseOptionsText(text)), slug]);
   await conn.end();
   console.log(`\n✓ Database "${DB}" is ready.`);
 })().catch((e) => {

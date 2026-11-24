@@ -26,6 +26,7 @@ const nodemailer  = require("nodemailer");
 const helmet      = require("helmet");
 const compression = require("compression");
 const rateLimit   = require("express-rate-limit");
+const { parseOptionsText, formatOptionsText, readOptions, applyCustomization } = require("./lib/options");
 
 const app        = express();
 const PORT       = process.env.PORT || 3000;
@@ -63,6 +64,12 @@ const STORE = {
   tax_rate:      num(process.env.TAX_RATE_PERCENT, 0),
   tax_label:     process.env.TAX_LABEL || "Tax",
   return_days:   num(process.env.RETURN_WINDOW_DAYS, 30),
+  // Delivery estimate shown on product pages (working days; Sundays skipped)
+  dispatch_days:   num(process.env.DISPATCH_DAYS, 2),
+  transit_min:     num(process.env.TRANSIT_DAYS_MIN, 3),
+  transit_max:     num(process.env.TRANSIT_DAYS_MAX, 7),
+  instagram_url:   process.env.STORE_INSTAGRAM || "",
+  facebook_url:    process.env.STORE_FACEBOOK || "",
 };
 const NOTIFY_EMAIL = process.env.STORE_NOTIFY_EMAIL || STORE.email;
 
@@ -82,6 +89,25 @@ const ADMIN_SECRET = ADMIN_JWT_SECRET || crypto.randomBytes(32).toString("hex");
 const STRIPE_SECRET_KEY      = process.env.STRIPE_SECRET_KEY || "";
 const STRIPE_PUBLISHABLE_KEY = process.env.STRIPE_PUBLISHABLE_KEY || "";
 const stripe = STRIPE_SECRET_KEY ? require("stripe")(STRIPE_SECRET_KEY) : null;
+
+// ── Razorpay (UPI, cards, netbanking, wallets) — on when both keys are set
+const RAZORPAY_KEY_ID = process.env.RAZORPAY_KEY_ID || "", RAZORPAY_KEY_SECRET = process.env.RAZORPAY_KEY_SECRET || "";
+const RAZORPAY_API = (process.env.RAZORPAY_API_BASE || "https://api.razorpay.com/v1").replace(/\/+$/, "");
+const razorpayOn = !!(RAZORPAY_KEY_ID && RAZORPAY_KEY_SECRET);
+async function razorpay(method, pathName, body) {
+  const r = await fetch(RAZORPAY_API + pathName, {
+    method, signal: AbortSignal.timeout(20000),
+    headers: { Authorization: "Basic " + Buffer.from(`${RAZORPAY_KEY_ID}:${RAZORPAY_KEY_SECRET}`).toString("base64"), "Content-Type": "application/json" },
+    body: body ? JSON.stringify(body) : undefined,
+  });
+  const data = await r.json().catch(() => ({}));
+  if (!r.ok) throw new HttpError(502, `Payment provider error: ${(data.error && data.error.description) || r.status}`);
+  return data;
+}
+const safeEqual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
+
+// ── Cash on delivery — on with COD_ENABLED=true; optional fee and maximum order value
+const COD = { enabled: process.env.COD_ENABLED === "true", fee: num(process.env.COD_FEE, 0), max: num(process.env.COD_MAX_ORDER, 0) };
 if (!stripe) console.warn("ℹ️  STRIPE_SECRET_KEY not set — checkout runs in SIMULATED payment mode (no real charges).");
 if (IS_PROD && !stripe) console.warn("⚠️  Production without Stripe: orders will be marked paid without payment. Set Stripe keys before launch.");
 
@@ -173,7 +199,18 @@ const bad = (msg) => new HttpError(400, msg);
 function orderNumber() {
   return "AO-" + new Date().toISOString().slice(2, 10).replace(/-/g, "") + "-" + crypto.randomBytes(3).toString("hex").toUpperCase();
 }
-function toBool(r) { return { ...r, is_featured: r.is_featured === 1, is_active: r.is_active === undefined ? true : r.is_active === 1 }; }
+function toBool(r) {
+  const out = { ...r, is_featured: r.is_featured === 1, is_active: r.is_active === undefined ? true : r.is_active === 1 };
+  if ("options" in r) {
+    const o = readOptions(r.options);
+    out.options = o;
+    out.customisable = !!o;
+    out.made_to_order_days = o ? Number(o.days) || 0 : 0;
+  }
+  if ("sold_90d" in r) out.popular = Number(r.sold_90d) >= POPULAR_MIN_SOLD;
+  return out;
+}
+const POPULAR_MIN_SOLD = 5;   // units sold in 90 days before a product earns the "Popular" badge
 function productPath(p) { return p.slug ? `/product/${encodeURIComponent(p.slug)}` : `/product.html?id=${p.id}`; }
 function absUrl(u) { if (!u) return ""; return /^https?:\/\//i.test(u) ? u : BASE_URL + (u.startsWith("/") ? u : "/" + u); }
 
@@ -185,6 +222,28 @@ app.disable("x-powered-by");
 // CSP is off because the pages use inline scripts/handlers; every other helmet header is on.
 app.use(helmet({ contentSecurityPolicy: false, crossOriginEmbedderPolicy: false }));
 app.use(compression());
+
+// Razorpay webhook (optional; set RAZORPAY_WEBHOOK_SECRET and subscribe to payment.captured)
+app.post("/api/razorpay/webhook", express.raw({ type: "application/json" }), h(async (req, res) => {
+  const secret = process.env.RAZORPAY_WEBHOOK_SECRET;
+  if (!secret) return res.status(400).send("Webhook not configured");
+  const sig = crypto.createHmac("sha256", secret).update(req.body).digest("hex");
+  if (!safeEqual(sig, req.headers["x-razorpay-signature"] || "")) return res.status(400).send("Bad signature");
+  const event = JSON.parse(req.body.toString("utf8"));
+  if (event.event === "payment.captured") {
+    const pay = event.payload && event.payload.payment && event.payload.payment.entity;
+    const [[order]] = pay ? await pool.query("SELECT id FROM orders WHERE payment_intent_id = ?", [pay.id]) : [[null]];
+    if (pay && !order) setTimeout(async () => {           // give the browser a minute to finish checkout first
+      const [[late]] = await pool.query("SELECT id FROM orders WHERE payment_intent_id = ?", [pay.id]);
+      if (!late) {
+        console.warn(`⚠️  Razorpay payment ${pay.id} captured with no matching order.`);
+        sendMail(NOTIFY_EMAIL, `Action needed: payment without order (${pay.id})`,
+          `<p>Razorpay payment <b>${esc(pay.id)}</b> for ${esc(money(pay.amount / 100))} from ${esc(pay.email || "a customer")} (${esc(pay.contact || "")}) succeeded but no order was created. Please check the Razorpay dashboard and contact the customer or refund.</p>`);
+      }
+    }, 60000);
+  }
+  res.json({ received: true });
+}));
 
 // Stripe webhook needs the raw body, so it is registered before express.json()
 app.post("/api/stripe/webhook", express.raw({ type: "application/json" }), h(async (req, res) => {
@@ -299,9 +358,13 @@ const priceShort = (n) => money(n).replace(/\.00$/, "");
 // Plain HTML versions of what the page scripts draw, so search engines (and
 // visitors before JavaScript runs) see real products, prices and links.
 function cardHtml(p) {
+  p = toBool(p);
   const url = esc(productPath(p));
-  return `<div class="product-card"><div class="product-card-img"><a href="${url}"><img src="${esc(p.image_url)}"${imgSrcset(p.image_url)} sizes="(max-width: 640px) 92vw, 300px" width="1000" height="1250" alt="${esc(p.name)}" loading="lazy" decoding="async" /></a></div>`
-    + `<div class="product-card-body"><p class="product-card-category">${esc(p.category || "")}</p><h3 class="product-card-name"><a href="${url}">${esc(p.name)}</a></h3><p class="product-card-price">${esc(money(p.price))}</p></div></div>`;
+  const badges = [p.popular ? '<span class="pbadge pbadge-popular">Popular</span>' : "", p.customisable ? '<span class="pbadge">Customisable</span>' : "",
+    p.made_to_order_days ? '<span class="pbadge pbadge-quiet">Made to order</span>' : ""].join("");
+  const alt = p.alt_image ? `<img class="card-alt" src="${esc(p.alt_image)}"${imgSrcset(p.alt_image)} sizes="(max-width: 640px) 46vw, 300px" alt="" loading="lazy" decoding="async" aria-hidden="true" />` : "";
+  return `<div class="product-card${p.alt_image ? " has-alt" : ""}"><div class="product-card-img"><a href="${url}" aria-label="${esc(p.name)}"><img src="${esc(p.image_url)}"${imgSrcset(p.image_url)} sizes="(max-width: 640px) 46vw, 300px" width="1000" height="1250" alt="${esc(p.name)}" loading="lazy" decoding="async" />${alt}</a><div class="card-badges">${badges}</div></div>`
+    + `<div class="product-card-body"><p class="product-card-category">${esc(p.category || "")}</p><h3 class="product-card-name"><a href="${url}">${esc(p.name)}</a></h3><p class="product-card-price">${p.customisable ? '<span class="from">From</span> ' : ""}${esc(money(p.price))}</p></div></div>`;
 }
 function categoryPath(c) { return c.slug ? `/shop/${encodeURIComponent(c.slug)}` : `/shop?category=${c.id}`; }
 
@@ -316,7 +379,10 @@ const CATEGORY_SEO = {
 };
 const categorySeo = (c) => CATEGORY_SEO[c.slug] || { phrase: c.name, intro: `Explore our ${c.name.toLowerCase()} collection — every piece chosen for craft, material and lasting beauty.` };
 
-const SHOP_SELECT = `SELECT p.id, p.name, p.price, p.image_url, p.slug, p.category_id, p.is_featured, p.description, p.stock_qty, c.name AS category
+const SHOP_SELECT = `SELECT p.id, p.name, p.price, p.image_url, p.slug, p.category_id, p.is_featured, p.description, p.stock_qty, p.options, c.name AS category,
+  (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.image_url <> p.image_url ORDER BY pi.sort_order, pi.id LIMIT 1) AS alt_image,
+  (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id
+     WHERE oi.product_id = p.id AND o.status <> 'cancelled' AND o.created_at >= NOW() - INTERVAL 90 DAY) AS sold_90d
   FROM products p LEFT JOIN categories c ON c.id = p.category_id WHERE p.is_active = 1`;
 const freeShipLine = () => (STORE.free_shipping_threshold > 0 ? ` Free shipping over ${priceShort(STORE.free_shipping_threshold)}.` : "");
 const breadcrumbLd = (items) => ({ "@context": "https://schema.org", "@type": "BreadcrumbList",
@@ -371,6 +437,7 @@ app.get("/shop.html", h(async (req, res) => {
 }));
 
 app.get("/", h(async (req, res) => {
+  const faqLd = { "@context": "https://schema.org", "@type": "FAQPage", mainEntity: HOME_FAQ.map(([q, a]) => ({ "@type": "Question", name: q, acceptedAnswer: { "@type": "Answer", text: a } })) };
   const [[featured], [cats]] = await Promise.all([
     pool.query(`${SHOP_SELECT} AND p.is_featured = 1 ORDER BY p.id`),
     pool.query("SELECT id, name, slug, image_url FROM categories ORDER BY name"),
@@ -380,31 +447,65 @@ app.get("/", h(async (req, res) => {
     title: `${STORE.name} — CNC Wall Art, Name Plates & Custom Wooden Decor${STORE.city ? " in " + STORE.city : ""}`,
     description: `CNC-cut wooden wall art, name plates, mandir panels, jali screens and personalised gifts from ${STORE.name}${STORE.city ? ` in ${STORE.city}` : ""}. Custom designs welcome.${freeShipLine()}`,
     canonical: BASE_URL + "/", image: "/images/hero.jpg",
-    head: `<link rel="preload" as="image" href="/images/brand/toolpath-portrait.webp" imagesrcset="/images/brand/toolpath-portrait-sm.webp 700w, /images/brand/toolpath-portrait.webp 1000w" imagesizes="(max-width: 960px) 92vw, 600px" fetchpriority="high" />`,
-    fill: { featured: featured.map(cardHtml).join(""), categories: catHtml, quotepanel: quotePanelHtml() },
-    ld: [localBusinessLd(), { "@context": "https://schema.org", "@type": "WebSite", name: STORE.name, url: BASE_URL + "/",
+    fill: { featured: featured.map(cardHtml).join(""), categories: catHtml, quotepanel: quotePanelHtml(), reviews: await homeReviewsHtml() },
+    ld: [localBusinessLd(), faqLd, { "@context": "https://schema.org", "@type": "WebSite", name: STORE.name, url: BASE_URL + "/",
          potentialAction: { "@type": "SearchAction", target: `${BASE_URL}/shop?q={search_term_string}`, "query-input": "required name=search_term_string" } }],
   });
 }));
 
+app.get(["/work", "/work.html"], h(async (req, res) => {
+  if (req.path === "/work.html") return res.redirect(301, "/work");
+  const [rows] = await pool.query(`${SHOP_SELECT} ORDER BY p.is_featured DESC, p.updated_at DESC, p.id DESC LIMIT 8`);
+  const gallery = rows.map((p) => `<a href="${esc(productPath(p))}" class="reveal"><img src="${esc(p.image_url)}"${imgSrcset(p.image_url)} sizes="(max-width: 960px) 46vw, 280px" width="1000" height="1250" alt="${esc(p.name)}" loading="lazy" decoding="async" /><span class="cap">${esc(p.name)}</span></a>`).join("");
+  renderPage(res, "work.html", {
+    title: `Our work — Name Plates, Signage, Mandir & Jali | ${STORE.name}`,
+    description: `What ${STORE.name} makes: name plates and signage, mandir panels, jali partitions, wall art, corporate gifts and custom CNC parts in wood and acrylic.`,
+    canonical: BASE_URL + "/work", image: "/images/om-jali-panel.jpg", fill: { gallery },
+    ld: [breadcrumbLd([["Home", "/"], ["Our work", "/work"]])],
+  });
+}));
+
 app.get("/contact", (req, res) => renderPage(res, "contact.html", {
-  title: `Contact & Visit Us${STORE.city ? " in " + STORE.city : ""} — ${STORE.name}`,
+  title: `Contact & visit us${STORE.city ? " in " + STORE.city : ""} — ${STORE.name}`,
   description: `Get in touch with ${STORE.name}${STORE.city ? ` in ${STORE.city}` : ""}: store address, opening hours, phone and email. Questions about a piece, an order or styling your space? We reply within one business day.`,
   canonical: BASE_URL + "/contact", image: "/images/story.jpg",
   ld: [localBusinessLd(), breadcrumbLd([["Home", "/"], ["Contact", "/contact"]])],
 }));
 app.get("/shipping", (req, res) => renderPage(res, "shipping.html", {
-  title: `Shipping Information — ${STORE.name}`,
+  title: `Shipping information — ${STORE.name}`,
   description: `Delivery times, shipping rates and order tracking for ${STORE.name}.${freeShipLine()}`,
   canonical: BASE_URL + "/shipping", image: "/images/hero.jpg",
   ld: [breadcrumbLd([["Home", "/"], ["Shipping", "/shipping"]])],
 }));
 app.get("/returns", (req, res) => renderPage(res, "returns.html", {
-  title: `Returns & Exchanges — ${STORE.name}`,
+  title: `Returns & exchanges — ${STORE.name}`,
   description: `Changed your mind? ${STORE.name} offers ${STORE.return_days}-day returns and exchanges on unused items. See how to start a return and when refunds arrive.`,
   canonical: BASE_URL + "/returns", image: "/images/hero.jpg",
   ld: [breadcrumbLd([["Home", "/"], ["Returns", "/returns"]])],
 }));
+
+// Home FAQ (kept in step with the questions shown on the page) — becomes FAQ rich results in Google
+const HOME_FAQ = [
+  ["How long will my order take?", "Ready designs are dispatched in 2–3 working days. Personalised and made-to-order pieces take 3–10 working days to make, depending on the design. Each product page shows an estimated delivery date for your PIN code."],
+  ["Can you make a design in my size or with my own artwork?", "Yes. Send a sketch, photo, logo or DXF/SVG file with the size you need. We reply with a design preview and price, and nothing is cut until you approve it."],
+  ["Which materials do you work with?", "Solid wood such as teak, MDF and HDHMR, birch and marine plywood, and clear, coloured or mirror acrylic."],
+  ["Do you deliver across India?", "Yes. Orders are packed in protective cartons and shipped with tracking. Large panels may travel with a transport partner."],
+  ["Can I return a personalised piece?", "Personalised and custom-sized pieces can't be returned unless they arrive damaged or differ from the approved design. Ready designs can be returned within the return window."],
+  ["How do I look after wooden pieces?", "Dust with a soft dry cloth, keep indoor pieces away from direct water and avoid harsh cleaners on painted or stained finishes."],
+];
+
+// Real customer reviews for the home page — the whole section is left out until some exist
+async function homeReviewsHtml() {
+  const [rows] = await pool.query(`SELECT r.name, r.rating, r.comment, r.verified, p.name AS product, p.slug
+    FROM reviews r JOIN products p ON p.id = r.product_id AND p.is_active = 1
+    WHERE r.is_hidden = 0 AND r.rating >= 4 AND CHAR_LENGTH(r.comment) >= 20
+    ORDER BY r.verified DESC, r.created_at DESC LIMIT 6`);
+  if (!rows.length) return "";
+  const cards = rows.map((r) => `<figure class="review-card reveal"><div class="review-stars" aria-label="${r.rating} out of 5 stars">${"★".repeat(r.rating)}<span>${"★".repeat(5 - r.rating)}</span></div>
+    <blockquote>${esc(r.comment.length > 260 ? r.comment.slice(0, 257) + "…" : r.comment)}</blockquote>
+    <figcaption><b>${esc(r.name)}</b>${r.verified ? ' <span class="verified">✓ Verified buyer</span>' : ""}<a href="${esc(productPath(r))}">${esc(r.product)}</a></figcaption></figure>`).join("");
+  return `<section class="home-reviews" aria-labelledby="revH"><div class="reviews-inner"><p class="eyebrow">Customer reviews</p><h2 id="revH" class="section-title" style="margin:12px 0 30px">What customers say</h2><div class="review-grid">${cards}</div></div></section>`;
+}
 
 // Walnut panel beside the home-page quote form: phone, email, address and workshop hours
 function quotePanelHtml() {
@@ -429,7 +530,7 @@ async function renderShop(req, res, cat) {
   const description = cat
     ? `${seo.intro} Shop ${cat.name.toLowerCase()} at ${STORE.name}.${freeShipLine()}`
     : `Shop the full ${STORE.name} collection: CNC-cut wall art, name plates, mandir panels, jali screens, wall clocks and personalised gifts.${freeShipLine()}`;
-  const header = `<p class="page-header-eyebrow">${cat ? "Shop by category" : "The Collection"}</p>\n    <h1 id="shopTitle">${esc(cat ? cat.name : "Shop All")}</h1>\n    <p id="shopIntro">${esc(cat ? seo.intro : "Every piece chosen for its craft, material, and lasting beauty.")}</p>`;
+  const header = `<p class="page-header-eyebrow">${cat ? "Shop by category" : "The collection"}</p>\n    <h1 id="shopTitle">${esc(cat ? cat.name : "Shop all")}</h1>\n    <p id="shopIntro">${esc(cat ? seo.intro : "Every piece chosen for its craft, material, and lasting beauty.")}</p>`;
   // Crawlable links to every category (the interactive filter buttons are drawn by script)
   const catLinks = `<nav class="sr-only" aria-label="Categories">${cats.map((c) => `<a href="${esc(categoryPath(c))}">${esc(c.name)}</a>`).join(" ")}</nav>`;
   const crumbs = [["Home", "/"], ["Shop", "/shop"]]; if (cat) crumbs.push([cat.name, path_]);
@@ -438,7 +539,7 @@ async function renderShop(req, res, cat) {
     fill: { header: header + catLinks, grid: products.map(cardHtml).join(""), count: `${products.length} product${products.length === 1 ? "" : "s"}` },
     head: cat ? `<script>window.__SHOP = { categoryId: ${Number(cat.id)} };</script>` : "",
     ld: [
-      { "@context": "https://schema.org", "@type": "CollectionPage", name: cat ? cat.name : "Shop All", url: canonical, description,
+      { "@context": "https://schema.org", "@type": "CollectionPage", name: cat ? cat.name : "Shop all", url: canonical, description,
         mainEntity: { "@type": "ItemList", numberOfItems: products.length,
           itemListElement: products.map((p, i) => ({ "@type": "ListItem", position: i + 1, url: BASE_URL + productPath(p), name: p.name })) } },
       breadcrumbLd(crumbs),
@@ -522,7 +623,7 @@ app.get("/sitemap.xml", h(async (req, res) => {
   const newest = products.reduce((m, p) => (p.updated_at && new Date(p.updated_at) > m ? new Date(p.updated_at) : m), new Date(0));
   const urls = [
     { loc: "/", pr: "1.0", mod: newest.getTime() ? newest : null, img: "/images/hero.jpg" }, { loc: "/shop", pr: "0.9", mod: newest.getTime() ? newest : null },
-    { loc: "/contact", pr: "0.7" }, { loc: "/shipping", pr: "0.3" }, { loc: "/returns", pr: "0.3" },
+    { loc: "/contact", pr: "0.7" }, { loc: "/work", pr: "0.8" }, { loc: "/shipping", pr: "0.3" }, { loc: "/returns", pr: "0.3" },
     ...cats.map((c) => ({ loc: categoryPath(c), pr: "0.8" })),
     ...products.map((p) => ({ loc: productPath(p), pr: "0.8", mod: p.updated_at, img: p.image_url, title: p.name })),
   ];
@@ -548,7 +649,9 @@ app.get("/api/config", (req, res) => {
   const { tax_rate, ...publicStore } = STORE;
   res.json({
     stripePublishableKey: stripe ? STRIPE_PUBLISHABLE_KEY || null : null,
-    simulated: !stripe,
+    simulated: !stripe && !razorpayOn,
+    payments: { razorpay: razorpayOn, razorpayKeyId: razorpayOn ? RAZORPAY_KEY_ID : null, stripe: !!stripe,
+                cod: COD.enabled, codFee: COD.fee, codMax: COD.max },
     store: { ...publicStore, tax_rate },
     imgVariants: IMG_VARIANTS,
   });
@@ -563,7 +666,10 @@ const RATING_JOIN = `
     FROM reviews WHERE is_hidden = 0 GROUP BY product_id
   ) r ON r.product_id = p.id`;
 const PRODUCT_SELECT = `SELECT p.id, p.name, p.price, p.description, p.category_id, p.image_url, p.is_featured, p.stock_qty,
-  p.slug, p.created_at, c.name AS category, r.avg_rating, r.review_count
+  p.slug, p.created_at, p.options, c.name AS category, r.avg_rating, r.review_count,
+  (SELECT pi.image_url FROM product_images pi WHERE pi.product_id = p.id AND pi.image_url <> p.image_url ORDER BY pi.sort_order, pi.id LIMIT 1) AS alt_image,
+  (SELECT COALESCE(SUM(oi.quantity), 0) FROM order_items oi JOIN orders o ON o.id = oi.order_id
+     WHERE oi.product_id = p.id AND o.status <> 'cancelled' AND o.created_at >= NOW() - INTERVAL 90 DAY) AS sold_90d
   FROM products p LEFT JOIN categories c ON p.category_id = c.id ${RATING_JOIN}`;
 
 app.get("/api/products/featured", h(async (req, res) => {
@@ -780,11 +886,17 @@ async function loadCart(ident, db = pool) {
   if (!ident.user_id && !ident.session_id) return [];
   const w = cartWhere(ident, "ci");
   const [rows] = await db.query(`
-    SELECT ci.id, ci.product_id, ci.quantity, p.name, p.price, p.image_url, p.stock_qty, p.slug, c.name AS category
+    SELECT ci.id, ci.product_id, ci.quantity, ci.customization, p.name, p.price AS base_price, p.options, p.image_url, p.stock_qty, p.slug, c.name AS category
     FROM cart_items ci JOIN products p ON ci.product_id = p.id AND p.is_active = 1
     LEFT JOIN categories c ON p.category_id = c.id
     WHERE ${w.sql} ORDER BY ci.created_at DESC, ci.id DESC`, [w.arg]);
-  return rows;
+  return rows.map((r) => {
+    let saved = null; try { saved = r.customization ? JSON.parse(r.customization) : null; } catch {}
+    let custom = { summary: "", delta: 0, values: null };
+    try { custom = applyCustomization(r.options, saved || {}); } catch { /* options changed since it was added: keep defaults */ }
+    const { options, customization, ...rest } = r;
+    return { ...rest, price: Math.round((Number(r.base_price) + custom.delta) * 100) / 100, customization: custom.values, customization_summary: custom.summary };
+  });
 }
 
 // Loads a cart row only if it belongs to the caller (fixes: anyone could edit/delete any cart line by id)
@@ -808,17 +920,20 @@ app.post("/api/cart", h(async (req, res) => {
   const pid = intIn(req.body.product_id, 1, 1e9), qty = intIn(req.body.quantity ?? 1, 1, 99);
   if (!ident.session_id && !ident.user_id) throw bad("Missing cart session — please refresh the page.");
   if (!pid || !qty) throw bad("Invalid product or quantity.");
-  const [[product]] = await pool.query("SELECT stock_qty, name FROM products WHERE id = ? AND is_active = 1", [pid]);
+  const [[product]] = await pool.query("SELECT stock_qty, name, options FROM products WHERE id = ? AND is_active = 1", [pid]);
   if (!product) throw new HttpError(404, "Product not found");
+  let custom;
+  try { custom = applyCustomization(product.options, req.body.customization); } catch (e) { throw bad(e.message); }
   const w = cartWhere(ident);
-  const [[existing]] = await pool.query(`SELECT id, quantity FROM cart_items WHERE ${w.sql} AND product_id = ?`, [w.arg, pid]);
-  const current = existing ? existing.quantity : 0;
+  const [[existing]] = await pool.query(`SELECT id, quantity FROM cart_items WHERE ${w.sql} AND product_id = ? AND custom_key = ?`, [w.arg, pid, custom.key]);
+  const [[{ inCart }]] = await pool.query(`SELECT COALESCE(SUM(quantity), 0) AS inCart FROM cart_items WHERE ${w.sql} AND product_id = ?`, [w.arg, pid]);
+  const current = Number(inCart);
   if (current + qty > product.stock_qty) {
     throw bad(product.stock_qty - current > 0 ? `Only ${product.stock_qty - current} more available.` : `${product.name} is out of stock${current ? " (you already have the last ones in your cart)" : ""}.`);
   }
   if (existing) await pool.query("UPDATE cart_items SET quantity = quantity + ? WHERE id = ?", [qty, existing.id]);
-  else await pool.query("INSERT INTO cart_items (session_id, user_id, product_id, quantity) VALUES (?, ?, ?, ?)",
-    [ident.session_id || `user-${ident.user_id}`, ident.user_id, pid, qty]);
+  else await pool.query("INSERT INTO cart_items (session_id, user_id, product_id, quantity, customization, custom_key) VALUES (?, ?, ?, ?, ?, ?)",
+    [ident.session_id || `user-${ident.user_id}`, ident.user_id, pid, qty, custom.values ? JSON.stringify(custom.values) : null, custom.key]);
   res.json({ success: true });
 }));
 
@@ -826,7 +941,9 @@ app.put("/api/cart/:id", h(async (req, res) => {
   const qty = intIn(req.body.quantity, 1, 99);
   if (!qty) throw bad("Quantity must be between 1 and 99.");
   const item = await ownedCartItem(req);
-  if (qty > item.stock_qty) throw bad(`Only ${item.stock_qty} in stock.`);
+  const w = cartWhere(cartIdentity(req));
+  const [[{ others }]] = await pool.query(`SELECT COALESCE(SUM(quantity), 0) AS others FROM cart_items WHERE ${w.sql} AND product_id = ? AND id <> ?`, [w.arg, item.product_id, item.id]);
+  if (qty + Number(others) > item.stock_qty) throw bad(`Only ${Math.max(item.stock_qty - Number(others), 0)} more in stock.`);
   await pool.query("UPDATE cart_items SET quantity = ? WHERE id = ?", [qty, item.id]);
   res.json({ success: true });
 }));
@@ -843,7 +960,7 @@ app.post("/api/cart/merge", authRequired, h(async (req, res) => {
   const [guestItems] = await pool.query(
     "SELECT ci.*, p.stock_qty FROM cart_items ci JOIN products p ON p.id = ci.product_id WHERE ci.session_id = ? AND ci.user_id IS NULL", [session_id]);
   for (const item of guestItems) {
-    const [[existing]] = await pool.query("SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ?", [req.user.id, item.product_id]);
+    const [[existing]] = await pool.query("SELECT id, quantity FROM cart_items WHERE user_id = ? AND product_id = ? AND custom_key = ?", [req.user.id, item.product_id, item.custom_key || ""]);
     if (existing) {
       await pool.query("UPDATE cart_items SET quantity = ? WHERE id = ?", [Math.min(existing.quantity + item.quantity, item.stock_qty), existing.id]);
       await pool.query("DELETE FROM cart_items WHERE id = ?", [item.id]);
@@ -870,14 +987,15 @@ async function evaluatePromo(code, subtotal, db = pool) {
   return { valid: true, id: p.id, code: p.code, type: p.type, value: Number(p.value), discount_amount: discount, free_shipping: p.type === "free_shipping" };
 }
 
-function computeTotals(items, discount) {
+function computeTotals(items, discount, opts = {}) {
   const subtotal = round2(items.reduce((s, i) => s + Number(i.price) * i.quantity, 0));
   const discount_amount = discount && discount.valid ? round2(Math.min(discount.discount_amount, subtotal)) : 0;
   const afterDiscount = round2(subtotal - discount_amount);
   let shipping_amount = !items.length || afterDiscount >= STORE.free_shipping_threshold ? 0 : STORE.shipping_flat;
   if (discount && discount.valid && discount.free_shipping) shipping_amount = 0;
   const tax_amount = round2(afterDiscount * (STORE.tax_rate / 100));
-  return { subtotal, discount_amount, shipping_amount: round2(shipping_amount), tax_amount, total: round2(afterDiscount + shipping_amount + tax_amount),
+  const cod_fee = opts.cod && items.length ? round2(COD.fee) : 0;
+  return { subtotal, discount_amount, shipping_amount: round2(shipping_amount), tax_amount, cod_fee, total: round2(afterDiscount + shipping_amount + tax_amount + cod_fee),
            currency: STORE.currency, free_shipping_threshold: STORE.free_shipping_threshold };
 }
 
@@ -895,23 +1013,35 @@ app.post("/api/cart/totals", h(async (req, res) => {
   const subtotal = items.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
   const discount = req.body.discount_code ? await evaluatePromo(req.body.discount_code, subtotal) : { valid: false, message: "" };
   delete discount.id;
-  res.json({ items, totals: computeTotals(items, discount), discount });
+  res.json({ items, totals: computeTotals(items, discount, { cod: req.body.payment_method === "cod" }), discount });
 }));
 
 // ════════════════════════════════════════════════════════════
 //  CHECKOUT
 // ════════════════════════════════════════════════════════════
 const minorUnits = (amount) => Math.round(Number(amount) * 100);
+const qtyByProduct = (items) => items.reduce((m, i) => m.set(i.product_id, (m.get(i.product_id) || 0) + i.quantity), new Map());
 
 // Step 1: create (or simulate) a payment for the current cart
 app.post("/api/checkout/intent", checkoutLimiter, h(async (req, res) => {
   const ident = cartIdentity(req);
   const items = await loadCart(ident);
   if (!items.length) throw bad("Your cart is empty.");
-  for (const i of items) if (i.quantity > i.stock_qty) throw bad(`${i.name} only has ${i.stock_qty} in stock — please update your cart.`);
+  for (const [pid, q] of qtyByProduct(items)) { const i = items.find((x) => x.product_id === pid); if (q > i.stock_qty) throw bad(`${i.name} only has ${i.stock_qty} in stock — please update your cart.`); }
   const subtotal = items.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
   const discount = req.body.discount_code ? await evaluatePromo(req.body.discount_code, subtotal) : { valid: false };
-  const totals = computeTotals(items, discount);
+  const method = str(req.body.payment_method, 20);
+  const totals = computeTotals(items, discount, { cod: method === "cod" });
+  if (method === "cod") {
+    if (!COD.enabled) throw bad("Cash on delivery isn't available right now.");
+    if (COD.max && totals.total > COD.max) throw bad(`Cash on delivery is available on orders up to ${money(COD.max)}. Please pay online for this order.`);
+    return res.json({ method: "cod", totals });
+  }
+  if (razorpayOn) {
+    const rzOrder = await razorpay("POST", "/orders", { amount: minorUnits(totals.total), currency: STORE.currency, receipt: "cart-" + crypto.randomBytes(5).toString("hex"),
+      notes: { session_id: ident.session_id || "", user_id: ident.user_id ? String(ident.user_id) : "", email: str(req.body.email, 255) } });
+    return res.json({ method: "razorpay", razorpayOrderId: rzOrder.id, keyId: RAZORPAY_KEY_ID, amount: rzOrder.amount, currency: rzOrder.currency, totals });
+  }
   if (!stripe) return res.json({ simulated: true, paymentIntentId: null, totals });
 
   const intent = await stripe.paymentIntents.create({
@@ -932,8 +1062,23 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
   const discountCode = str(req.body.discount_code, 60);
 
   // ── Verify payment (fixes: with Stripe on, sending "sim_…" used to create a paid order for free)
-  let paymentMode = "simulated", intent = null, paymentRef = null;
-  if (stripe) {
+  let paymentMode = "simulated", intent = null, paymentRef = null, rzPayment = null;
+  const method = str(req.body.payment_method, 20);
+  if (method === "cod") {
+    if (!COD.enabled) throw bad("Cash on delivery isn't available right now.");
+    paymentMode = "cod"; paymentRef = "cod_" + crypto.randomBytes(8).toString("hex");
+  } else if (razorpayOn) {
+    const oid = str(req.body.razorpay_order_id, 64), pid = str(req.body.razorpay_payment_id, 64), sig = str(req.body.razorpay_signature, 200);
+    if (!oid || !pid || !sig) throw new HttpError(402, "Payment is required to place this order.");
+    const expected = crypto.createHmac("sha256", RAZORPAY_KEY_SECRET).update(`${oid}|${pid}`).digest("hex");
+    if (!safeEqual(expected, sig)) throw new HttpError(402, "We couldn't verify this payment. If money was deducted, it will be refunded automatically.");
+    const [[already]] = await pool.query("SELECT order_number FROM orders WHERE payment_intent_id = ?", [pid]);
+    if (already) return res.json({ success: true, order_number: already.order_number });   // double-click / retry
+    rzPayment = await razorpay("GET", `/payments/${encodeURIComponent(pid)}`);
+    if (rzPayment.order_id !== oid || !["captured", "authorized"].includes(rzPayment.status)) throw new HttpError(402, "Payment has not completed yet.");
+    if (rzPayment.status === "authorized") rzPayment = await razorpay("POST", `/payments/${encodeURIComponent(pid)}/capture`, { amount: rzPayment.amount, currency: rzPayment.currency });
+    paymentMode = "razorpay"; paymentRef = pid;
+  } else if (stripe) {
     const piId = str(req.body.payment_intent_id, 255);
     if (!piId.startsWith("pi_")) throw new HttpError(402, "Payment is required to place this order.");
     const [[already]] = await pool.query("SELECT order_number FROM orders WHERE payment_intent_id = ?", [piId]);
@@ -947,7 +1092,8 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
 
   const refundIfPaid = async (reason) => {
     if (intent) { try { await stripe.refunds.create({ payment_intent: intent.id }); } catch (e) { console.error("Auto-refund failed:", e.message); } }
-    return new HttpError(409, reason + (intent ? " Your payment has been refunded automatically." : ""));
+    if (rzPayment) { try { await razorpay("POST", `/payments/${encodeURIComponent(rzPayment.id)}/refund`, {}); } catch (e) { console.error("Razorpay auto-refund failed:", e.message); } }
+    return new HttpError(409, reason + (intent || rzPayment ? " Your payment has been refunded automatically." : ""));
   };
 
   const conn = await pool.getConnection();
@@ -957,14 +1103,19 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
     items = await loadCart(ident, conn);
     if (!items.length) { await conn.rollback(); throw await refundIfPaid("Your cart is empty."); }
 
-    for (const i of items) {
-      const [[fresh]] = await conn.query("SELECT stock_qty FROM products WHERE id = ? FOR UPDATE", [i.product_id]);
-      if (!fresh || fresh.stock_qty < i.quantity) { await conn.rollback(); throw await refundIfPaid(`${i.name} no longer has enough stock.`); }
+    for (const [pid, q] of qtyByProduct(items)) {
+      const [[fresh]] = await conn.query("SELECT stock_qty FROM products WHERE id = ? FOR UPDATE", [pid]);
+      if (!fresh || fresh.stock_qty < q) { await conn.rollback(); throw await refundIfPaid(`${items.find((x) => x.product_id === pid).name} no longer has enough stock.`); }
     }
 
     const subtotal = items.reduce((s, i) => s + Number(i.price) * i.quantity, 0);
     const discount = discountCode ? await evaluatePromo(discountCode, subtotal, conn) : { valid: false };
-    totals = computeTotals(items, discount);
+    totals = computeTotals(items, discount, { cod: paymentMode === "cod" });
+    if (paymentMode === "cod" && COD.max && totals.total > COD.max) { await conn.rollback(); throw bad(`Cash on delivery is available on orders up to ${money(COD.max)}.`); }
+    if (rzPayment && (rzPayment.amount !== minorUnits(totals.total) || rzPayment.currency !== STORE.currency)) {
+      await conn.rollback();
+      throw await refundIfPaid("Your cart changed during checkout, so the amount paid didn't match.");
+    }
 
     if (intent && (intent.amount !== minorUnits(totals.total) || intent.currency !== STORE.currency.toLowerCase())) {
       await conn.rollback();
@@ -976,15 +1127,15 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
       INSERT INTO orders (order_number, user_id, session_id, email, status, subtotal, discount_code, discount_amount,
         shipping_amount, tax_amount, total, currency, shipping_full_name, shipping_line1, shipping_line2, shipping_city,
         shipping_state, shipping_postal_code, shipping_country, shipping_phone, payment_status, payment_intent_id, payment_mode)
-      VALUES (?, ?, ?, ?, 'paid', ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, 'paid', ?, ?)`,
-      [order_number, ident.user_id, ident.session_id, email, totals.subtotal, discount.valid ? discount.code : null, totals.discount_amount,
-       totals.shipping_amount, totals.tax_amount, totals.total, STORE.currency, ship.full_name, ship.line1, ship.line2 || null, ship.city,
-       ship.state || null, ship.postal_code, ship.country, ship.phone || null, paymentRef, paymentMode]);
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      [order_number, ident.user_id, ident.session_id, email, paymentMode === "cod" ? "processing" : "paid", totals.subtotal, discount.valid ? discount.code : null, totals.discount_amount,
+       round2(totals.shipping_amount + (totals.cod_fee || 0)), totals.tax_amount, totals.total, STORE.currency, ship.full_name, ship.line1, ship.line2 || null, ship.city,
+       ship.state || null, ship.postal_code, ship.country, ship.phone || null, paymentMode === "cod" ? "unpaid" : "paid", paymentRef, paymentMode]);
     const orderId = orderResult.insertId;
 
     for (const it of items) {
-      await conn.query("INSERT INTO order_items (order_id, product_id, name, price, quantity, image_url) VALUES (?, ?, ?, ?, ?, ?)",
-        [orderId, it.product_id, it.name, it.price, it.quantity, it.image_url]);
+      await conn.query("INSERT INTO order_items (order_id, product_id, name, price, quantity, image_url, customization) VALUES (?, ?, ?, ?, ?, ?, ?)",
+        [orderId, it.product_id, it.name, it.price, it.quantity, it.image_url, it.customization_summary || null]);
       await conn.query("UPDATE products SET stock_qty = stock_qty - ? WHERE id = ?", [it.quantity, it.product_id]);
     }
     if (discount.valid) await conn.query("UPDATE discount_codes SET used_count = used_count + 1 WHERE id = ?", [discount.id]);
@@ -1005,14 +1156,14 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
   // Emails are sent after the response so a slow SMTP server never blocks checkout
   res.json({ success: true, order_number, total: totals.total });
   const viewUrl = `${BASE_URL}/order-confirmation.html?order=${encodeURIComponent(order_number)}&email=${encodeURIComponent(email)}`;
-  sendMail(email, `Order confirmed — ${order_number}`, orderEmailHtml({ order_number, items, totals, ship, viewUrl }));
+  sendMail(email, `Order confirmed — ${order_number}`, orderEmailHtml({ order_number, items, totals, ship, viewUrl, cod: paymentMode === "cod" }));
   sendMail(NOTIFY_EMAIL, `🛍️ New order ${order_number} — ${money(totals.total)}`,
     `<p>New order <b>${esc(order_number)}</b> from ${esc(email)} for <b>${esc(money(totals.total))}</b>.</p>
-     <p>${items.map((i) => `${esc(i.name)} × ${i.quantity}`).join("<br/>")}</p><p><a href="${BASE_URL}/admin.html">Open admin dashboard</a></p>`);
+     <p>${items.map((i) => `${esc(i.name)} × ${i.quantity}${i.customization_summary ? ` — <i>${esc(i.customization_summary)}</i>` : ""}`).join("<br/>")}</p><p><a href="${BASE_URL}/admin.html">Open admin dashboard</a></p>`);
 }));
 
-function orderEmailHtml({ order_number, items, totals, ship, viewUrl }) {
-  const rows = items.map((i) => `<tr><td style="padding:6px 0">${esc(i.name)} × ${i.quantity}</td><td style="padding:6px 0;text-align:right">${esc(money(i.price * i.quantity))}</td></tr>`).join("");
+function orderEmailHtml({ order_number, items, totals, ship, viewUrl, cod = false }) {
+  const rows = items.map((i) => `<tr><td style="padding:6px 0">${esc(i.name)} × ${i.quantity}${(i.customization_summary || (typeof i.customization === "string" && i.customization)) ? `<br/><span style="color:#6B6055;font-size:13px">${esc(i.customization_summary || i.customization)}</span>` : ""}</td><td style="padding:6px 0;text-align:right">${esc(money(i.price * i.quantity))}</td></tr>`).join("");
   const line = (label, v) => `<tr><td style="padding:3px 0;color:#6B6055">${label}</td><td style="text-align:right">${v}</td></tr>`;
   return `
   <div style="font-family:Helvetica,Arial,sans-serif;color:#2A2621;max-width:540px;margin:auto">
@@ -1023,10 +1174,12 @@ function orderEmailHtml({ order_number, items, totals, ship, viewUrl }) {
       ${line("Subtotal", esc(money(totals.subtotal)))}
       ${totals.discount_amount > 0 ? line("Discount", "-" + esc(money(totals.discount_amount))) : ""}
       ${line("Shipping", totals.shipping_amount ? esc(money(totals.shipping_amount)) : "Free")}
+      ${totals.cod_fee > 0 ? line("Cash on delivery fee", esc(money(totals.cod_fee))) : ""}
       ${totals.tax_amount > 0 ? line(esc(STORE.tax_label), esc(money(totals.tax_amount))) : ""}
       <tr><td style="padding-top:8px"><strong>Total</strong></td><td style="text-align:right;padding-top:8px"><strong>${esc(money(totals.total))}</strong></td></tr>
     </table>
     <p style="margin-top:20px"><strong>Shipping to</strong><br/>${esc(ship.full_name)}<br/>${esc(ship.line1)}${ship.line2 ? "<br/>" + esc(ship.line2) : ""}<br/>${esc(ship.city)}, ${esc(ship.state)} ${esc(ship.postal_code)}<br/>${esc(ship.country)}</p>
+    ${cod ? `<p style="background:#FFF4DE;padding:10px 12px;border-radius:6px"><strong>Cash on delivery:</strong> please keep <strong>${esc(money(totals.total))}</strong> ready when your order arrives.</p>` : ""}
     <p><a href="${esc(viewUrl)}">View your order online</a></p>
     <p style="color:#6B6055;font-size:13px">Questions? Just reply to this email${STORE.phone ? ` or call us on ${esc(STORE.phone)}` : ""}.<br/>— ${esc(STORE.name)}</p>
   </div>`;
@@ -1190,8 +1343,21 @@ app.post("/api/admin/orders/:id/refund", adminRequired, h(async (req, res) => {
     if (!stripe) throw bad("Stripe is not configured on this server.");
     await stripe.refunds.create({ payment_intent: order.payment_intent_id });
   }
+  if (order.payment_mode === "razorpay") {
+    if (!razorpayOn) throw bad("Razorpay is not configured on this server.");
+    await razorpay("POST", `/payments/${encodeURIComponent(order.payment_intent_id)}/refund`, {});
+  }
   await pool.query("UPDATE orders SET payment_status = 'refunded' WHERE id = ?", [order.id]);
   res.json({ success: true, mode: order.payment_mode });
+}));
+
+// Cash on delivery: record the payment once the courier has collected it
+app.post("/api/admin/orders/:id/mark-paid", adminRequired, h(async (req, res) => {
+  const [[order]] = await pool.query("SELECT id, payment_status, payment_mode FROM orders WHERE id = ?", [Number(req.params.id)]);
+  if (!order) throw new HttpError(404, "Not found");
+  if (order.payment_status !== "unpaid") throw bad("This order is not waiting for payment.");
+  await pool.query("UPDATE orders SET payment_status = 'paid' WHERE id = ?", [order.id]);
+  res.json({ success: true });
 }));
 
 // ── Products (admin) ─────────────────────────────────────────
@@ -1205,6 +1371,9 @@ function readProduct(b) {
   if (!p.name) throw bad("Product name is required.");
   if (!(p.price > 0)) throw bad("Price must be greater than 0.");
   const gallery = Array.isArray(b.gallery) ? b.gallery.map((u) => str(u, 500)).filter(Boolean).slice(0, 12) : null;
+  let options = null;
+  try { options = parseOptionsText(String(b.options_text || "").slice(0, 4000)); } catch (e) { throw bad("Customisation options — " + e.message); }
+  p.options = options ? JSON.stringify(options) : null;
   return { p, gallery };
 }
 async function uniqueSlug(slug, exceptId = 0) {
@@ -1224,14 +1393,14 @@ async function saveGallery(productId, gallery) {
 app.get("/api/admin/products", adminRequired, h(async (req, res) => {
   const [rows] = await pool.query("SELECT p.*, c.name AS category FROM products p LEFT JOIN categories c ON p.category_id = c.id ORDER BY p.id DESC");
   const [imgs] = await pool.query("SELECT product_id, image_url FROM product_images ORDER BY sort_order, id");
-  res.json(rows.map((r) => ({ ...toBool(r), gallery: imgs.filter((i) => i.product_id === r.id).map((i) => i.image_url) })));
+  res.json(rows.map((r) => ({ ...toBool(r), options_text: formatOptionsText(readOptions(r.options)), gallery: imgs.filter((i) => i.product_id === r.id).map((i) => i.image_url) })));
 }));
 
 app.post("/api/admin/products", adminRequired, h(async (req, res) => {
   const { p, gallery } = readProduct(req.body);
   p.slug = await uniqueSlug(p.slug);
-  const [r] = await pool.query(`INSERT INTO products (name, price, description, category_id, image_url, is_featured, is_active, stock_qty, slug, meta_title, meta_description)
-    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [p.name, p.price, p.description, p.category_id, p.image_url, p.is_featured, p.is_active, p.stock_qty, p.slug, p.meta_title, p.meta_description]);
+  const [r] = await pool.query(`INSERT INTO products (name, price, description, category_id, image_url, is_featured, is_active, stock_qty, slug, meta_title, meta_description, options)
+    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`, [p.name, p.price, p.description, p.category_id, p.image_url, p.is_featured, p.is_active, p.stock_qty, p.slug, p.meta_title, p.meta_description, p.options]);
   await saveGallery(r.insertId, gallery);
   res.json({ id: r.insertId, slug: p.slug, success: true });
 }));
@@ -1240,8 +1409,8 @@ app.put("/api/admin/products/:id", adminRequired, h(async (req, res) => {
   const id = Number(req.params.id);
   const { p, gallery } = readProduct(req.body);
   p.slug = await uniqueSlug(p.slug, id);
-  await pool.query(`UPDATE products SET name=?, price=?, description=?, category_id=?, image_url=?, is_featured=?, is_active=?, stock_qty=?, slug=?, meta_title=?, meta_description=? WHERE id=?`,
-    [p.name, p.price, p.description, p.category_id, p.image_url, p.is_featured, p.is_active, p.stock_qty, p.slug, p.meta_title, p.meta_description, id]);
+  await pool.query(`UPDATE products SET name=?, price=?, description=?, category_id=?, image_url=?, is_featured=?, is_active=?, stock_qty=?, slug=?, meta_title=?, meta_description=?, options=? WHERE id=?`,
+    [p.name, p.price, p.description, p.category_id, p.image_url, p.is_featured, p.is_active, p.stock_qty, p.slug, p.meta_title, p.meta_description, p.options, id]);
   await saveGallery(id, gallery);
   res.json({ success: true, slug: p.slug });
 }));

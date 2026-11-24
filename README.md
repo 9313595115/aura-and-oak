@@ -90,19 +90,33 @@ Restart the server after editing `.env`.
 
 ## Payments
 
-- **No Stripe keys → test mode.** Orders are created and marked paid without
-  charging anyone; the admin shows them with a "test" tag.
-- **Live payments:** add `STRIPE_SECRET_KEY` + `STRIPE_PUBLISHABLE_KEY`, then in
-  Stripe → Developers → Webhooks add `https://YOUR-DOMAIN/api/stripe/webhook`
-  with events `payment_intent.succeeded` and `charge.refunded`, and put the
-  signing secret in `STRIPE_WEBHOOK_SECRET`.
-- The server verifies every payment's amount and currency against the cart,
-  refunds automatically if stock ran out mid-payment, and won't create two
-  orders from one payment.
-- India: Stripe India supports INR card payments for registered businesses.
-  If you'd rather use Razorpay/UPI, the payment step is isolated in
-  `/api/checkout/intent` and `/api/checkout/complete` and in `placeOrder()`
-  in `checkout.html`.
+Checkout picks the payment methods automatically from `.env`:
+
+- **Razorpay** (UPI, cards, netbanking, wallets): set `RAZORPAY_KEY_ID` and
+  `RAZORPAY_KEY_SECRET`. The server creates the Razorpay order for the exact cart
+  total, verifies the payment signature and amount before creating the order, and
+  refunds automatically if anything doesn't match. Optional webhook: point
+  Razorpay at `BASE_URL/api/razorpay/webhook` (event `payment.captured`) with
+  `RAZORPAY_WEBHOOK_SECRET` — you're emailed if a payment ever has no order.
+- **Cash on delivery**: `COD_ENABLED=true`, optional `COD_FEE` and `COD_MAX_ORDER`.
+  COD orders arrive as *processing / unpaid*; use **Mark as paid** in the admin
+  order view once the courier has collected the cash.
+- **Stripe** (cards) still works with `STRIPE_*` keys if you prefer it.
+- With none of these set, checkout runs in **preview mode** (no money taken).
+
+## Customisation options
+
+Each product can have options, written as simple lines in **Admin → Products**:
+
+```
+text* Family name | 30 | The Sharma Family      (* = required · max letters · example)
+choice Size: 45 × 15 cm, 60 × 20 cm (+700)       (first = default · (+700) adds ₹700)
+preview nameplate                                 (live preview: nameplate or round)
+days 5                                            (made to order: extra working days)
+```
+
+The price is always worked out on the server from the product's own options, and
+the customer's choices appear in the cart, checkout, emails and admin order view.
 
 ## Email
 

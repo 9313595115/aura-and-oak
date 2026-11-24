@@ -8,7 +8,7 @@
   <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
   <link rel="manifest" href="/site.webmanifest" />
   <meta name="theme-color" content="#F7F3EE" />
-  <title>Contact & Visit Us — Eagle CNC Art & Craft</title>
+  <title>Contact & visit us — Eagle CNC Art & Craft</title>
 <meta name="description" content="Visit the Eagle CNC Art & Craft store or get in touch — address, opening hours, phone, and directions." />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
@@ -77,46 +77,49 @@
   <link rel="stylesheet" href="/css/responsive.css" />
   <link rel="stylesheet" href="/css/brand.css" />
 </head>
-<body>
+<body class="has-site-nav">
 
-<nav>
-  <a href="/" class="nav-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" /></a>
-  <div class="nav-actions">
+<!-- SITE HEADER (shared) -->
+  <nav id="navbar" class="site-nav" aria-label="Main">
+    <a href="/" class="nav-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" /></a>
+    <div class="nav-links"><a href="/shop">Shop</a><a href="/work">Work</a><a href="/#process">Process</a><a href="/contact" class="active" aria-current="page">Contact</a></div>
+    <div class="nav-actions">
       <a href="/contact?topic=custom#contactForm" class="nav-quote">Get a quote</a>
-    <span class="nav-account-slot"></span>
+      <span class="nav-account-slot"></span>
+      <a href="#" class="cart-btn" id="cartBtn" data-cart-trigger>Cart <span class="cart-count" id="cartCount" style="display:none">0</span></a>
+      <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu" aria-controls="mobileNavDrawer"><span></span><span></span><span></span></button>
+    </div>
+  </nav>
+  <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
+  <div class="mobile-nav-drawer" id="mobileNavDrawer" aria-label="Menu">
+    <div class="mobile-nav-drawer-header">
+      <span class="drawer-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></span>
+      <button class="drawer-close" id="mobileNavClose" aria-label="Close menu"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></button>
+    </div>
+    <a href="/contact?topic=custom#contactForm" class="drawer-quote"><strong>Get a quote</strong></a>
     <a href="/shop">Shop</a>
-    <a href="#" class="cart-btn" data-cart-trigger>Cart <span class="cart-count" id="cartCount" style="display:none">0</span></a>
-    <button class="hamburger-btn" id="hamburgerBtn" aria-label="Open menu"><span></span><span></span><span></span></button>
+    <a href="/work">Work</a>
+    <a href="/#process">Process</a>
+    <a href="/contact">Contact</a>
+    <a href="/account.html">Account</a>
+    <a href="/account.html?tab=wishlist">Wishlist</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/shipping">Shipping</a>
+    <a href="/returns">Returns</a>
   </div>
-</nav>
-
-<div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
-<div class="mobile-nav-drawer" id="mobileNavDrawer">
-  <div class="mobile-nav-drawer-header">
-    <span class="drawer-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></span>
-    <button class="drawer-close" id="mobileNavClose" aria-label="Close menu">
-      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
-    </button>
-  </div>
-  <a href="/contact?topic=custom#contactForm" class="drawer-quote"><strong>Get a quote</strong></a>
-    <a href="/shop">Shop</a>
-  <a href="/#story">Our Story</a>
-  <a href="/contact">Contact &amp; Visit</a>
-  <a href="account.html">Account</a>
-  <a href="cart.html">Cart</a>
-  <a href="/shipping">Shipping</a>
-  <a href="/returns">Returns</a>
-</div>
+  <!-- /SITE HEADER -->
 
 <header class="page-header">
   <p class="eyebrow">Say Hello</p>
-  <h1>Contact &amp; Visit Us</h1>
+  <h1>Contact &amp; visit us</h1>
   <p>Questions about a design, a custom order or an existing purchase? Visit the workshop or send us a note — a real person will reply.</p>
 </header>
 
 <main class="contact-wrap">
   <section class="info-card" aria-labelledby="visitHeading">
-    <h2 id="visitHeading">Visit <span data-store="name">Eagle CNC Art &amp; Craft</span></h2>
+    <img class="info-photo" src="/images/story-sm.webp" alt="A laser engraving a pattern into wood in the Eagle workshop" width="600" height="750" loading="lazy" />
+    <h2 id="visitHeading">Visit the workshop</h2>
+    <p class="info-lead">See finishes up close, bring your measurements, or talk through a custom design. We usually reply within one working day.</p>
     <div id="infoRows"><p style="color:var(--text2)">Loading store details…</p></div>
     <div class="quick" id="quickLinks"></div>
     <div class="map" id="mapWrap" hidden></div>
@@ -144,18 +147,27 @@
       <textarea id="cMessage" name="message" required maxlength="5000"></textarea>
       <div class="hp" aria-hidden="true"><label for="cWebsite">Leave this empty</label><input id="cWebsite" name="website" tabindex="-1" autocomplete="off" /></div>
       <p class="form-msg" id="formMsg" role="status"></p>
-      <button class="btn-primary" type="submit" style="width:100%" id="sendBtn">Send Message</button>
+      <button class="btn-primary" type="submit" style="width:100%" id="sendBtn">Send message</button>
     </form>
   </section>
 </main>
 
-<footer>
-  <div class="footer-brand brand-logo"><img src="/images/brand/eagle-logo-reversed-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></div>
-  <div class="footer-links">
-    <a href="/">Home</a><a href="/shop">Shop</a><a href="/shipping">Shipping</a><a href="/returns">Returns</a>
-  </div>
-  <span>&copy; <span data-year>2026</span> Eagle CNC Art &amp; Craft</span>
-</footer>
+<!-- SITE FOOTER (shared) -->
+  <footer class="site-footer">
+    <div class="sf-grid">
+      <div class="sf-brand">
+        <div class="footer-brand brand-logo"><img src="/images/brand/eagle-logo-reversed-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></div>
+        <p class="footer-tagline">CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.</p>
+        <div class="footer-nap" data-store-nap></div>
+        <div class="sf-social" data-store-social></div>
+      </div>
+      <div class="footer-col"><h3>Shop</h3><ul><li><a href="/shop">All products</a></li><li><a href="/shop/name-plates">Name plates</a></li><li><a href="/shop/mandir">Mandir &amp; spiritual</a></li><li><a href="/shop/wall-art">Wall art</a></li><li><a href="/shop/gifts">Gifts</a></li></ul></div>
+      <div class="footer-col"><h3>Help</h3><ul><li><a href="/shipping">Shipping</a></li><li><a href="/returns">Returns</a></li><li><a href="/order-confirmation.html">Track an order</a></li><li><a href="/contact">Contact</a></li></ul></div>
+      <div class="footer-col"><h3>Studio</h3><ul><li><a href="/work">Our work</a></li><li><a href="/#process">How it works</a></li><li><a href="/contact?topic=custom#contactForm">Custom orders</a></li><li><a href="/account.html">My account</a></li></ul></div>
+    </div>
+    <div class="sf-bottom"><span>&copy; <span data-year>2026</span> Eagle CNC Art &amp; Craft</span><span class="sf-secure">🔒 Secure checkout</span></div>
+  </footer>
+  <!-- /SITE FOOTER -->
 
 <div class="toast" id="toast"></div>
 <script src="/js/common.js"></script>
@@ -178,8 +190,8 @@
 
     const directions = s.maps_url || (addr ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent((s.name || '') + ' ' + addr)}` : '');
     document.getElementById('quickLinks').innerHTML = [
-      directions && `<a href="${esc(directions)}" target="_blank" rel="noopener">Get Directions</a>`,
-      s.phone && `<a href="tel:${esc(tel)}">Call Us</a>`,
+      directions && `<a href="${esc(directions)}" target="_blank" rel="noopener">Get directions</a>`,
+      s.phone && `<a href="tel:${esc(tel)}">Call us</a>`,
       s.whatsapp && `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener">WhatsApp</a>`,
     ].filter(Boolean).join('');
 

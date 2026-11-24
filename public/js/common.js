@@ -141,7 +141,7 @@ function ensureCartDrawer() {
   wrap.innerHTML = `
     <div class="cart-drawer-overlay" id="cartDrawerOverlay"></div>
     <aside class="cart-drawer" id="cartDrawer" aria-label="Shopping cart" aria-hidden="true">
-      <div class="cart-drawer-header"><h2>Your Cart</h2>
+      <div class="cart-drawer-header"><h2>Your cart</h2>
         <button class="drawer-close" id="cartDrawerClose" aria-label="Close cart">
           <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
         </button></div>
@@ -171,7 +171,7 @@ async function openCartDrawer() {
   body.innerHTML = items.map(i => `
     <div class="drawer-item">
       <img src="${esc(i.image_url)}" alt="${esc(i.name)}" />
-      <div class="drawer-item-info"><a href="${esc(productUrl(i))}">${esc(i.name)}</a><span>Qty ${i.quantity} · ${fmt(i.price * i.quantity)}</span></div>
+      <div class="drawer-item-info"><a href="${esc(productUrl(i))}">${esc(i.name)}</a>${i.customization_summary ? `<small class="item-custom">${esc(i.customization_summary)}</small>` : ''}<span>Qty ${i.quantity} · ${fmt(i.price * i.quantity)}</span></div>
       <button class="drawer-remove" aria-label="Remove ${esc(i.name)}" onclick="drawerRemove(${Number(i.id)})">×</button>
     </div>`).join('');
   foot.innerHTML = `
@@ -195,7 +195,7 @@ function renderAccountSlot() {
   document.querySelectorAll('.nav-account-slot').forEach(slot => {
     slot.innerHTML = user && getToken()
       ? `<a href="/account.html" class="nav-account-link">Hi, ${esc(String(user.name || '').split(' ')[0] || 'there')}</a>`
-      : `<a href="/account.html" class="nav-account-link">Sign In</a>`;
+      : `<a href="/account.html" class="nav-account-link">Sign in</a>`;
   });
 }
 function initMobileNav() {
@@ -235,6 +235,16 @@ function applyStoreInfo() {
     ].filter(Boolean).join('');
   });
 
+  // Social links in the footer (only those that are set in the store settings)
+  document.querySelectorAll('[data-store-social]').forEach(el => {
+    const ig = s.instagram_url || s.instagram, fb = s.facebook_url || s.facebook;
+    el.innerHTML = [
+      ig && `<a href="${esc(ig)}" target="_blank" rel="noopener" aria-label="Instagram"><svg viewBox="0 0 24 24" width="18" height="18" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor"/></svg></a>`,
+      fb && `<a href="${esc(fb)}" target="_blank" rel="noopener" aria-label="Facebook"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M14 8h3V4h-3a4 4 0 0 0-4 4v2H8v4h2v8h4v-8h3l1-4h-4V8z"/></svg></a>`,
+      s.whatsapp && `<a href="https://wa.me/${esc(s.whatsapp)}" target="_blank" rel="noopener" aria-label="WhatsApp"><svg viewBox="0 0 24 24" width="18" height="18" fill="currentColor"><path d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm4.5 12.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3c.2-.6.2-1.1.1-1.3l-.5-.3z"/></svg></a>`,
+    ].filter(Boolean).join('');
+  });
+
   if (s.whatsapp && !document.getElementById('waFab') && !/admin|checkout/.test(location.pathname)) {
     const a = document.createElement('a');
     a.id = 'waFab'; a.className = 'wa-fab'; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', 'Chat with us on WhatsApp');
@@ -246,6 +256,28 @@ function applyStoreInfo() {
 
 // ── Boot
 document.addEventListener('DOMContentLoaded', () => {
+  // Gentle fade-up as sections scroll into view (skipped for people who prefer reduced motion)
+  if ('IntersectionObserver' in window && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
+    document.documentElement.classList.add('motion');
+    document.querySelectorAll('.product-card, .category-card, .eh-steps li, .section-title, .story-img, .eh-quote-inner, .svc, .mat, .gallery a')
+      .forEach(el => el.classList.add('reveal'));
+    const io = new IntersectionObserver((entries) => entries.forEach(e => { if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); } }), { rootMargin: '0px 0px -8% 0px' });
+    const watch = (root) => root.querySelectorAll('.reveal:not(.in)').forEach((el, i) => { el.style.setProperty('--d', (i % 4) * 70 + 'ms'); io.observe(el); });
+    watch(document);
+    // Safety nets: never leave content hidden — reveal anything already on/above screen after fast scrolls or
+    // anchor jumps, everything before printing, and everything after a few seconds if the observer is slow.
+    const sweep = () => document.querySelectorAll('.reveal:not(.in)').forEach(el => { if (el.getBoundingClientRect().top < innerHeight) el.classList.add('in'); });
+    let st; addEventListener('scroll', () => { clearTimeout(st); st = setTimeout(sweep, 120); }, { passive: true });
+    addEventListener('load', () => setTimeout(sweep, 300));
+    addEventListener('beforeprint', () => document.querySelectorAll('.reveal').forEach(el => el.classList.add('in')));
+    setTimeout(() => document.querySelectorAll('.reveal:not(.in)').forEach(el => el.classList.add('in')), 6000);
+    // product grids drawn later by script get the same treatment
+    new MutationObserver((ms) => ms.forEach(m => m.addedNodes.forEach(n => { if (n.nodeType === 1) { if (n.matches('.product-card, .category-card')) n.classList.add('reveal'); n.querySelectorAll && n.querySelectorAll('.product-card, .category-card').forEach(c => c.classList.add('reveal')); watch(n.parentNode || document); } })))
+      .observe(document.body, { childList: true, subtree: true });
+  }
+  // Soft shadow under the shared header once the page scrolls
+  const siteNav = document.querySelector('nav.site-nav');
+  if (siteNav) { const t = () => siteNav.classList.toggle('scrolled', window.scrollY > 8); t(); window.addEventListener('scroll', t, { passive: true }); }
   getSessionId();
   renderAccountSlot();
   initMobileNav();
@@ -255,3 +287,53 @@ document.addEventListener('DOMContentLoaded', () => {
   document.addEventListener('keydown', (e) => { if (e.key === 'Escape') closeCartDrawer(); });
   if (document.getElementById('cartCount')) loadCartCount();
 });
+
+// ── Product cards (shared by home, shop and product pages) ─────────────────
+// Badges only show what is true: customisable, made to order, popular (real sales), low stock.
+function productBadges(p) {
+  const b = [];
+  if (p.popular) b.push('<span class="pbadge pbadge-popular">Popular</span>');
+  if (p.customisable) b.push('<span class="pbadge">Customisable</span>');
+  if (p.made_to_order_days) b.push(`<span class="pbadge pbadge-quiet">Made to order</span>`);
+  return b.join('');
+}
+function cardMarkup(p, addFn) {
+  const out = p.stock_qty <= 0, url = productUrl(p);
+  const sizes = '(max-width: 640px) 46vw, 300px';
+  const alt = p.alt_image ? `<img class="card-alt" src="${esc(p.alt_image)}" ${imgSrcset(p.alt_image)} sizes="${sizes}" alt="" loading="lazy" decoding="async" aria-hidden="true" />` : '';
+  // Customisable pieces need choices first, so the quick button opens the product instead of adding to cart
+  const quick = p.customisable
+    ? `<a class="overlay-btn add" href="${esc(url)}">Customise</a>`
+    : `<button class="overlay-btn add" ${out ? 'disabled' : ''} onclick="${addFn}(${Number(p.id)}, '${escJs(p.name)}')">${out ? 'Sold out' : 'Add to cart'}</button>`;
+  const rating = Number(p.review_count) > 0 ? `<div class="card-rating">${renderStars(p.avg_rating, p.review_count)}</div>` : '';
+  return `
+    <div class="product-card${p.alt_image ? ' has-alt' : ''}">
+      <div class="product-card-img">
+        <a href="${esc(url)}" aria-label="${esc(p.name)}"><img src="${esc(p.image_url)}" ${imgSrcset(p.image_url)} sizes="${sizes}" width="1000" height="1250" alt="${esc(p.name)}" loading="lazy" decoding="async" />${alt}</a>
+        <div class="card-badges">${productBadges(p)}</div>
+        <div class="product-card-overlay"><a class="overlay-btn" href="${esc(url)}">View</a>${quick}</div>
+      </div>
+      <div class="product-card-body">
+        <p class="product-card-category">${esc(p.category || '')}</p>
+        <h3 class="product-card-name"><a href="${esc(url)}">${esc(p.name)}</a></h3>
+        <p class="product-card-price">${p.customisable ? '<span class="from">From</span> ' : ''}${fmt(p.price)}</p>
+        ${rating}
+        ${p.stock_qty > 0 && p.stock_qty < 10 ? `<div style="margin-top:6px">${stockBadge(p.stock_qty)}</div>` : out ? `<div style="margin-top:6px">${stockBadge(0)}</div>` : ''}
+      </div>
+    </div>`;
+}
+
+// ── Delivery estimate: working days, Sundays skipped ───────────────────────
+function addWorkingDays(date, n) {
+  const d = new Date(date);
+  while (n > 0) { d.setDate(d.getDate() + 1); if (d.getDay() !== 0) n--; }
+  return d;
+}
+function deliveryWindow(makeDays) {
+  const s = storeInfo();
+  const dispatch = Math.max(Number(s.dispatch_days ?? 2), Number(makeDays) || 0);
+  const from = addWorkingDays(new Date(), dispatch + Number(s.transit_min ?? 3));
+  const to = addWorkingDays(new Date(), dispatch + Number(s.transit_max ?? 7));
+  const f = (d) => d.toLocaleDateString(s.locale || 'en-IN', { weekday: 'short', day: 'numeric', month: 'short' });
+  return { dispatch, from, to, text: `${f(from)} – ${f(to)}` };
+}
