@@ -1,0 +1,226 @@
+/* ============================================================
+   Eagle CNC Art & Craft — brand theme (Brand Playbook v1.0)
+   Loaded LAST on every page, so it overrides each page's own styles.
+
+   Colour  · Cream #F8F3ED (main ground) · Sand #E9DFD0 (panels, dividers)
+             Walnut #3E362B (text, buttons, dark grounds)
+             Bronze #A07E59 (mark, accents, type ≥ 24px only — 3.4:1 on Cream)
+             Balance 60 / 30 / 10.
+   Type    · Montserrat for every headline, label and paragraph.
+             Display SemiBold 72/1.05 · H1 SemiBold 48/1.15 · H2 Medium 32/1.25
+             Body Regular · Label Medium 14, letter-spacing .3em
+             Headlines short and in sentence case.
+   Logo    · Never retyped — always the logo files in /images/brand/.
+   ============================================================ */
+
+:root {
+  --cream: #F8F3ED; --sand: #E9DFD0; --walnut: #3E362B; --bronze: #A07E59; --line: #DED2C0;
+  /* page variables used across the existing pages */
+  --bg: #F8F3ED; --bg2: #E9DFD0; --text: #3E362B; --text2: #5E5446; --primary: #3E362B;
+  --brass: #A07E59; --muted: #E9DFD0; --white: #FFFFFF; --radius: 6px;
+  --serif: 'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --sans:  'Montserrat', system-ui, -apple-system, 'Segoe UI', sans-serif;
+  --ao-bg: #F8F3ED; --ao-bg2: #E9DFD0; --ao-text: #3E362B; --ao-text2: #5E5446;
+  --ao-primary: #3E362B; --ao-primary-dark: #2B251D; --ao-brass: #A07E59; --ao-muted: #E9DFD0;
+  --ao-serif: var(--serif); --ao-sans: var(--sans);
+}
+
+/* ── Base type ─────────────────────────────────────────────── */
+html { -webkit-text-size-adjust: 100%; text-size-adjust: 100%; }
+body { background: var(--cream); color: var(--walnut); font-family: var(--sans); }
+h1, h2, h3, h4, .section-title, .hero-title, .page-title, .product-name, .summary-title,
+.page-header h1, .drawer-logo, .cart-drawer-header h2 { font-family: var(--serif); letter-spacing: -.01em; }
+h1, .page-header h1, .page-title, .product-name { font-weight: 600; line-height: 1.15; }
+h2, .section-title { font-weight: 600; line-height: 1.15; }
+h3 { font-weight: 600; }
+.section-title { font-size: clamp(28px, 3.6vw, 48px); }
+.section-sub, .hero-sub, .newsletter-sub { font-weight: 400; }
+em { font-style: normal; }
+
+/* Labels: Montserrat Medium, wide tracking (never Bronze — too light for small text) */
+.section-eyebrow, .hero-eyebrow, .page-header-eyebrow, .product-card-category, .product-category,
+.filter-label, .footer-col h3, .footer-col h4, .steps, .eyebrow {
+  font-family: var(--sans) !important; font-weight: 500 !important; letter-spacing: .3em !important;
+  text-transform: uppercase; color: var(--text2) !important; font-size: 11.5px !important;
+}
+
+/* ── Buttons: Walnut primary, outlined secondary, sentence case ── */
+.btn-primary, .add-btn, .checkout-btn, .place-order-btn, .drawer-btn, .promo-btn, #sendBtn, .newsletter-form button,
+button.btn-primary, a.btn-primary {
+  background: var(--walnut) !important; color: var(--cream) !important; border: 1.5px solid var(--walnut) !important;
+  border-radius: var(--radius) !important; font-family: var(--sans) !important; font-weight: 600 !important;
+  letter-spacing: .02em !important; text-transform: none !important; font-size: 14px !important;
+  touch-action: manipulation;
+}
+.btn-primary:hover, .add-btn:hover:not(:disabled), .checkout-btn:hover:not(:disabled), .place-order-btn:hover,
+.drawer-btn:hover, .promo-btn:hover, #sendBtn:hover, .newsletter-form button:hover {
+  background: #2B251D !important; border-color: #2B251D !important;
+}
+.btn-outline, .btn-secondary, .promo-btn.remove {
+  background: transparent !important; color: var(--walnut) !important; border: 1.5px solid var(--walnut) !important;
+  border-radius: var(--radius) !important; font-family: var(--sans) !important; font-weight: 600 !important;
+  letter-spacing: .02em !important; text-transform: none !important; touch-action: manipulation;
+}
+.btn-outline:hover, .btn-secondary:hover { background: var(--walnut) !important; color: var(--cream) !important; }
+.add-btn:disabled, .checkout-btn:disabled { background: var(--sand) !important; border-color: var(--sand) !important; color: var(--text2) !important; }
+
+/* ── Forms: 16px text so iPhones never zoom in when a field is tapped ── */
+input:not([type=checkbox]):not([type=radio]):not([type=range]), select, textarea {
+  font-family: var(--sans) !important; font-size: 16px !important; color: var(--walnut);
+  border-color: var(--line); border-radius: var(--radius); max-width: 100%;
+}
+input:not([type=checkbox]):not([type=radio]):not([type=range]):focus, select:focus, textarea:focus {
+  border-color: var(--walnut) !important; box-shadow: 0 0 0 3px rgba(160, 126, 89, .25); outline: none;
+}
+input::placeholder, textarea::placeholder { color: #8B8070; opacity: 1; }
+input[type=checkbox], input[type=radio] { accent-color: var(--walnut); width: 18px; height: 18px; }
+input[type=range] { accent-color: var(--bronze); }
+label { font-family: var(--sans); }
+
+/* ── Header: logo files, cream ground, "Get a quote" call to action ── */
+nav, #navbar { background: rgba(248, 243, 237, .96) !important; border-bottom: 1px solid var(--line) !important; }
+.nav-logo.brand-logo { display: flex; align-items: center; line-height: 0; }  /* centring comes from each page's own header rules on desktop */
+.brand-logo img { height: 46px; width: auto; display: block; }
+.drawer-logo.brand-logo img { height: 36px; }
+.footer-brand.brand-logo img { height: 48px; }
+.nav-links a, .nav-actions a, .nav-account-link { font-family: var(--sans); font-weight: 500; letter-spacing: .08em; color: var(--walnut); }
+.nav-links a:hover, .nav-links a.active { color: var(--bronze); }
+.nav-quote {
+  display: inline-flex; align-items: center; min-height: 40px; padding: 0 16px; border-radius: var(--radius);
+  background: var(--walnut); color: var(--cream) !important; font-weight: 600 !important; letter-spacing: .02em !important;
+  text-transform: none !important; font-size: 13.5px !important; white-space: nowrap;
+}
+.nav-quote:hover { background: #2B251D; }
+.cart-count { background: var(--bronze) !important; color: #fff !important; }
+.mobile-nav-drawer a.drawer-quote { background: var(--walnut); color: var(--cream) !important; border-radius: var(--radius); padding: 14px 16px !important; margin: 4px 0 8px; border: none !important; text-align: center; }
+@media (max-width: 960px) { .nav-actions .nav-quote { display: none !important; } }
+@media (max-width: 760px) {
+  /* Phones: logo on the left, cart + menu on the right — never overlapping */
+  nav, #navbar { justify-content: space-between !important; gap: 12px; }
+  .nav-logo.brand-logo { position: static !important; transform: none !important; flex: 0 1 auto; min-width: 0; margin-right: auto; }
+  .brand-logo img { height: 38px; max-width: 100%; }
+  .nav-actions { flex: none; }
+}
+@media (max-width: 360px) {
+  .brand-logo img { height: 32px; }
+}
+
+/* ── Footer & dark sections: Walnut ground, Cream type ── */
+footer { background: var(--walnut) !important; color: rgba(248, 243, 237, .78) !important; border-top: none !important; }
+footer a, footer .footer-links a { color: rgba(248, 243, 237, .9) !important; }
+footer a:hover { color: #fff !important; }
+footer .footer-col h3, footer .footer-col h4 { color: rgba(248, 243, 237, .7) !important; }
+footer .footer-tagline, footer .footer-bottom, footer .footer-copy { color: rgba(248, 243, 237, .72) !important; }
+.newsletter { background: var(--walnut) url('/images/brand/mark-repeat.png') repeat !important; background-size: 160px 160px !important; }
+.newsletter .section-title, .newsletter h2 { color: var(--cream) !important; }
+.newsletter .newsletter-sub, .newsletter p { color: rgba(248, 243, 237, .82) !important; }
+.newsletter .section-eyebrow { color: rgba(248, 243, 237, .7) !important; }
+.newsletter-form input { background: rgba(248, 243, 237, .08) !important; border-color: rgba(248, 243, 237, .3) !important; color: var(--cream) !important; }
+.newsletter-form input::placeholder { color: rgba(248, 243, 237, .65); }
+.newsletter-form button { background: var(--cream) !important; border-color: var(--cream) !important; color: var(--walnut) !important; }
+
+/* ── Cards, panels, prices ── */
+.product-card, .order-summary-card, .order-summary, .info-card, .form-card, .card, .faq-item, .auth-card {
+  border-color: var(--line) !important;
+}
+.product-card { border-radius: 10px !important; border: 1px solid var(--line); }
+.product-card-img, .product-main-img, .category-card, .story-img { border-radius: 10px; }
+.product-card-price, .product-price, .item-price { color: var(--walnut) !important; font-weight: 600 !important; }
+.product-card-name { font-family: var(--serif) !important; font-weight: 600 !important; }
+.stars, .star-input span.active, .star-input span:hover { color: var(--bronze) !important; }
+.page-header { background: var(--sand) !important; border-bottom: none !important; }
+.filter-tab.active { background: var(--walnut) !important; border-color: var(--walnut) !important; color: var(--cream) !important; }
+.filter-tab { border-color: var(--line) !important; font-family: var(--sans); }
+.toast { background: var(--walnut) !important; color: var(--cream) !important; font-family: var(--sans); }
+.section-block h2, .summary-title { font-weight: 600 !important; }
+
+/* ============================================================
+   HOME — layout from the playbook's website page:
+   one clear headline, two buttons, toolpath pattern behind real work;
+   process in three Bronze-numbered steps; quote form beside a Walnut panel.
+   ============================================================ */
+.eh-hero { background: var(--cream); padding: calc(68px + 56px) 48px 72px; } /* home header is fixed (68px) */
+.eh-hero-inner { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.05fr) minmax(0, 1fr); gap: 56px; align-items: center; }
+.eh-hero h1 { font-size: clamp(38px, 5.6vw, 72px); line-height: 1.05; font-weight: 600; letter-spacing: -.02em; margin: 18px 0 22px; color: var(--walnut); }
+.eh-hero h1 .bronze { color: var(--bronze); }
+.eh-hero p.lead { font-size: clamp(16px, 1.4vw, 19px); line-height: 1.6; color: var(--text2); max-width: 520px; }
+.eh-actions { display: flex; flex-wrap: wrap; gap: 12px; margin-top: 30px; }
+.eh-actions a { display: inline-flex; align-items: center; justify-content: center; min-height: 50px; padding: 0 26px; text-decoration: none; }
+.eh-materials { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0; margin-top: 44px; border-top: 1px solid var(--line); }
+.eh-materials div { padding: 18px 16px 0 0; }
+.eh-materials b { display: block; font-size: 17px; font-weight: 600; }
+.eh-materials span { display: block; font-size: 13px; color: var(--text2); margin-top: 2px; }
+.eh-visual { position: relative; border-radius: 18px; overflow: hidden; aspect-ratio: 5 / 6; background: var(--walnut); }
+.eh-visual .eh-pattern { position: absolute; inset: 0; width: 100%; height: 100% !important; object-fit: cover; }
+.story { background: var(--cream) !important; }
+.eh-visual .eh-work { position: absolute; right: 7%; bottom: 7%; width: 46%; height: auto; aspect-ratio: 4 / 5; object-fit: cover; border-radius: 12px; box-shadow: 0 24px 50px rgba(0, 0, 0, .35); border: 4px solid var(--cream); }
+.eh-visual .eh-tag { position: absolute; left: 7%; bottom: 7%; background: var(--cream); color: var(--walnut); border-radius: 999px; padding: 8px 14px; font-size: 12px; font-weight: 600; letter-spacing: .02em; box-shadow: 0 6px 16px rgba(0,0,0,.2); }
+
+.eh-process { background: #FFFFFF; padding: 88px 48px; border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); } /* Bronze numbers need white or Cream (≥3:1) */
+.eh-process-inner { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, .9fr) minmax(0, 1.1fr); gap: 64px; align-items: start; }
+.eh-steps { list-style: none; margin: 0; padding: 0; border-top: 1px solid rgba(62, 54, 43, .18); }
+.eh-steps li { display: grid; grid-template-columns: 76px minmax(0, 1fr); gap: 8px; padding: 26px 0; border-bottom: 1px solid rgba(62, 54, 43, .18); }
+.eh-steps .num { font-size: 36px; font-weight: 600; color: var(--bronze); line-height: 1; }
+.eh-steps h3 { font-size: clamp(20px, 2vw, 26px); font-weight: 500; margin: 0 0 6px; }
+.eh-steps p { color: var(--text2); font-size: 15px; line-height: 1.6; margin: 0; }
+
+.eh-quote { background: var(--cream); padding: 88px 48px; }
+.eh-quote-inner { max-width: 1240px; margin: 0 auto; display: grid; grid-template-columns: minmax(0, 1.15fr) minmax(0, .85fr); gap: 0; border-radius: 18px; overflow: hidden; border: 1px solid var(--line); background: #fff; }
+.eh-quote-form { padding: 48px; }
+.eh-quote-form h2 { font-size: clamp(28px, 3.4vw, 44px); margin: 14px 0 10px; }
+.eh-quote-form p.sub { color: var(--text2); margin-bottom: 26px; }
+.eh-quote-form .grid { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); gap: 14px; }
+.eh-quote-form .full { grid-column: 1 / -1; }
+.eh-quote-form label { display: block; font-size: 12px; font-weight: 600; letter-spacing: .08em; text-transform: uppercase; color: var(--text2); margin-bottom: 6px; }
+.eh-quote-form input, .eh-quote-form textarea, .eh-quote-form select { width: 100%; padding: 13px 14px; border: 1.5px solid var(--line); background: #fff; }
+.eh-quote-form textarea { min-height: 120px; resize: vertical; }
+.eh-quote-form button { margin-top: 18px; min-height: 52px; padding: 0 28px; width: 100%; cursor: pointer; }
+.eh-quote-form .msg { margin-top: 12px; font-size: 14px; min-height: 1.2em; }
+.eh-quote-form .msg.ok { color: #2F6B3F; } .eh-quote-form .msg.err { color: #A33A2B; }
+.eh-quote-panel { position: relative; background: var(--walnut); color: var(--cream); padding: 48px 40px; overflow: hidden; }
+.eh-quote-panel::after { content: ""; position: absolute; right: -60px; bottom: -60px; width: 300px; height: 300px; background: url('/images/brand/eagle-mark.png') center / contain no-repeat; opacity: .12; }
+.eh-quote-panel h3 { font-size: 12px; letter-spacing: .3em; text-transform: uppercase; font-weight: 500; color: rgba(248, 243, 237, .7); margin: 0 0 14px; }
+.eh-quote-panel .row { margin-bottom: 26px; position: relative; z-index: 1; }
+.eh-quote-panel a, .eh-quote-panel span { color: var(--cream); font-size: 17px; line-height: 1.7; display: block; text-decoration: none; word-break: break-word; }
+.eh-quote-panel a:hover { text-decoration: underline; }
+
+@media (max-width: 960px) {
+  .eh-hero { padding: calc(68px + 28px) 20px 56px; }
+  .eh-hero-inner, .eh-process-inner, .eh-quote-inner { grid-template-columns: minmax(0, 1fr); gap: 36px; }
+  .eh-visual { aspect-ratio: 4 / 3; max-height: 460px; }
+  .eh-process, .eh-quote { padding: 64px 20px; }
+  .eh-quote-form, .eh-quote-panel { padding: 32px 22px; }
+}
+@media (max-width: 560px) {
+  .eh-actions a { flex: 1 1 100%; }
+  .eh-materials { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1fr); }
+  .eh-materials b { font-size: 15px; } .eh-materials span { font-size: 12px; }
+  .eh-visual { aspect-ratio: 1 / 1; }
+  .eh-quote-form .grid { grid-template-columns: minmax(0, 1fr); }
+  .eh-steps li { grid-template-columns: 56px minmax(0, 1fr); }
+  .eh-steps .num { font-size: 30px; }
+}
+
+/* ============================================================
+   MOBILE ORDERING — checkout, cart, account, contact forms
+   ============================================================ */
+/* Never pin summary boxes on phones/tablets: a sticky box covers the fields underneath */
+@media (max-width: 900px) { .order-summary-card, .order-summary, .product-images { position: static !important; top: auto !important; } }
+
+@media (max-width: 600px) {
+  /* one field per row: no squeezed City/State or Postal/Country pairs */
+  .form-row, .row2, .grid2, .addr-grid, .form-grid { grid-template-columns: minmax(0, 1fr) !important; }
+  .checkout-wrap { padding: 20px 16px 72px !important; gap: 28px !important; }
+  .order-summary-card { padding: 18px !important; }
+  .summary-item img { width: 52px !important; height: 52px !important; }
+  input:not([type=checkbox]):not([type=radio]):not([type=range]), select { min-height: 48px; }
+  .place-order-btn { min-height: 54px; font-size: 15px !important; }
+  .steps { font-size: 11px !important; letter-spacing: .08em !important; flex-wrap: wrap; row-gap: 4px; }
+  form[role="search"] { flex-wrap: wrap; } form[role="search"] > * { flex: 1 1 100%; }
+  h1.page-title { font-size: 26px !important; }
+  .section-block { margin-bottom: 26px !important; }
+  /* account / contact / cart */
+  .auth-card, .form-card, .info-card { padding: 22px 18px !important; }
+  .promo-row { flex-wrap: nowrap; }
+  .promo-input { min-width: 0; }
+}

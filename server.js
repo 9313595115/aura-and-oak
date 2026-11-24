@@ -380,8 +380,8 @@ app.get("/", h(async (req, res) => {
     title: `${STORE.name} — CNC Wall Art, Name Plates & Custom Wooden Decor${STORE.city ? " in " + STORE.city : ""}`,
     description: `CNC-cut wooden wall art, name plates, mandir panels, jali screens and personalised gifts from ${STORE.name}${STORE.city ? ` in ${STORE.city}` : ""}. Custom designs welcome.${freeShipLine()}`,
     canonical: BASE_URL + "/", image: "/images/hero.jpg",
-    head: `<link rel="preload" as="image" href="/images/hero.webp" imagesrcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" imagesizes="100vw" fetchpriority="high" />`,
-    fill: { featured: featured.map(cardHtml).join(""), categories: catHtml },
+    head: `<link rel="preload" as="image" href="/images/brand/toolpath-portrait.webp" imagesrcset="/images/brand/toolpath-portrait-sm.webp 700w, /images/brand/toolpath-portrait.webp 1000w" imagesizes="(max-width: 960px) 92vw, 600px" fetchpriority="high" />`,
+    fill: { featured: featured.map(cardHtml).join(""), categories: catHtml, quotepanel: quotePanelHtml() },
     ld: [localBusinessLd(), { "@context": "https://schema.org", "@type": "WebSite", name: STORE.name, url: BASE_URL + "/",
          potentialAction: { "@type": "SearchAction", target: `${BASE_URL}/shop?q={search_term_string}`, "query-input": "required name=search_term_string" } }],
   });
@@ -405,6 +405,17 @@ app.get("/returns", (req, res) => renderPage(res, "returns.html", {
   canonical: BASE_URL + "/returns", image: "/images/hero.jpg",
   ld: [breadcrumbLd([["Home", "/"], ["Returns", "/returns"]])],
 }));
+
+// Walnut panel beside the home-page quote form: phone, email, address and workshop hours
+function quotePanelHtml() {
+  const tel = (STORE.phone || "").replace(/[^\d+]/g, "");
+  const addr = [STORE.street, STORE.city, STORE.region, STORE.postal_code].filter(Boolean).join(", ");
+  const rows = [];
+  if (STORE.phone || STORE.email) rows.push(`<div class="row"><h3>Visit or call</h3>${STORE.phone ? `<a href="tel:${esc(tel)}">${esc(STORE.phone)}</a>` : ""}${STORE.email ? `<a href="mailto:${esc(STORE.email)}">${esc(STORE.email)}</a>` : ""}${STORE.whatsapp ? `<a href="https://wa.me/${esc(String(STORE.whatsapp).replace(/\D/g, ""))}" rel="noopener">WhatsApp us</a>` : ""}</div>`);
+  if (addr) rows.push(`<div class="row"><h3>Workshop</h3><span>${esc(addr)}</span>${STORE.maps_url ? `<a href="${esc(STORE.maps_url)}" rel="noopener">Get directions →</a>` : ""}</div>`);
+  rows.push(`<div class="row"><h3>Workshop hours</h3><span>${esc(STORE.hours_display || "Mon–Sat · 10am–7pm")}</span></div>`);
+  return rows.join("");
+}
 
 async function renderShop(req, res, cat) {
   const [[products], [cats]] = await Promise.all([

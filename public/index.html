@@ -16,7 +16,7 @@
   <meta property="og:type" content="website" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600&display=swap" rel="stylesheet" />
+  <link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="/css/common.css" />
   <!--SEO-->
   <style>
@@ -263,6 +263,7 @@
     @media (max-width: 540px) { .custom-steps { grid-template-columns: minmax(0, 1fr); } }
   </style>
   <link rel="stylesheet" href="/css/responsive.css" />
+  <link rel="stylesheet" href="/css/brand.css" />
 </head>
 <body>
 
@@ -270,11 +271,12 @@
   <nav id="navbar">
     <div class="nav-links">
       <a href="/shop">Shop</a>
-      <a href="#story">Our Story</a>
-      <a href="/contact">Visit Us</a>
+      <a href="/#process">Process</a>
+      <a href="/contact">Contact</a>
     </div>
-    <a href="/" class="nav-logo brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="36" height="35" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></a>
+    <a href="/" class="nav-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" /></a>
     <div class="nav-actions">
+      <a href="/contact?topic=custom#contactForm" class="nav-quote">Get a quote</a>
       <span class="nav-account-slot"></span>
       <a href="account.html?tab=wishlist">Wishlist</a>
       <a href="#" class="cart-btn" id="cartBtn" data-cart-trigger>
@@ -288,13 +290,14 @@
   <div class="mobile-nav-overlay" id="mobileNavOverlay"></div>
   <div class="mobile-nav-drawer" id="mobileNavDrawer">
     <div class="mobile-nav-drawer-header">
-      <span class="drawer-logo brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="36" height="35" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></span>
+      <span class="drawer-logo brand-logo"><img src="/images/brand/eagle-logo-primary-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></span>
       <button class="drawer-close" id="mobileNavClose" aria-label="Close menu">
         <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>
       </button>
     </div>
+    <a href="/contact?topic=custom#contactForm" class="drawer-quote"><strong>Get a quote</strong></a>
     <a href="/shop">Shop</a>
-    <a href="/#story">Our Story</a>
+    <a href="/#process">Process</a>
     <a href="account.html">Account</a>
     <a href="account.html?tab=wishlist">Wishlist</a>
     <a href="cart.html">Cart</a>
@@ -302,14 +305,28 @@
     <a href="/returns">Returns</a>
   </div>
 
-  <!-- HERO -->
-  <section class="hero" style="padding:0">
-    <img src="/images/hero.jpg" srcset="/images/hero-sm.webp 960w, /images/hero.webp 1920w" sizes="100vw" width="1920" height="1080" alt="Intricate CNC-cut wooden wall art from Eagle CNC Art &amp; Craft" class="hero-img" fetchpriority="high" />
-    <div class="hero-content">
-      <p class="hero-eyebrow">CNC Art &amp; Craft Studio</p>
-      <h1 class="hero-title">Precision cut.<br><em>Crafted by hand.</em></h1>
-      <p class="hero-sub">Wall art, name plates, temple panels and personalised pieces — designed, CNC-cut and finished in our workshop.</p>
-      <a href="/shop" class="btn-primary">Shop the Collection</a>
+  <!-- HERO (brand playbook: one clear headline, two buttons, toolpath pattern behind real work) -->
+  <section class="eh-hero">
+    <div class="eh-hero-inner">
+      <div>
+        <p class="eyebrow">CNC Art &amp; Craft · Wood · Acrylic</p>
+        <h1>Cut, carved and engraved <span class="bronze">to order.</span></h1>
+        <p class="lead">Name plates, signage, jali panels, wall art and gifts — designed with you, made on our CNC machines and finished by hand.</p>
+        <div class="eh-actions">
+          <a href="/contact?topic=custom#contactForm" class="btn-primary">Get a quote</a>
+          <a href="/shop" class="btn-outline">See our work</a>
+        </div>
+        <div class="eh-materials">
+          <div><b>Wood</b><span>Teak · MDF · Ply</span></div>
+          <div><b>Acrylic</b><span>Clear · Colour · Mirror</span></div>
+          <div><b>Custom</b><span>Your file or sketch</span></div>
+        </div>
+      </div>
+      <div class="eh-visual">
+        <img class="eh-pattern" src="/images/brand/toolpath-portrait.jpg" srcset="/images/brand/toolpath-portrait-sm.webp 700w, /images/brand/toolpath-portrait.webp 1000w" sizes="(max-width: 960px) 92vw, 600px" width="1000" height="1200" alt="" fetchpriority="high" />
+        <img class="eh-work" src="/images/mandala-wall-art.jpg" srcset="/images/mandala-wall-art-sm.webp 600w, /images/mandala-wall-art.webp 1000w" sizes="(max-width: 960px) 44vw, 280px" width="1000" height="1250" alt="A CNC-carved mandala wall panel finished in walnut stain" />
+        <span class="eh-tag">Made in our workshop</span>
+      </div>
     </div>
   </section>
 
@@ -318,11 +335,11 @@
     <div style="max-width:1200px;margin:0 auto">
       <div class="section-header">
         <div>
-          <p class="section-eyebrow">Handpicked</p>
-          <h2 class="section-title">Featured Pieces</h2>
-          <p class="section-sub">Each item chosen for its craft, material, and quiet beauty.</p>
+          <p class="section-eyebrow">Our work</p>
+          <h2 class="section-title">Featured pieces</h2>
+          <p class="section-sub">Ready designs you can order today — or have made to your size.</p>
         </div>
-        <a href="/shop" class="btn-outline">View All</a>
+        <a href="/shop" class="btn-outline">View all</a>
       </div>
       <div class="product-grid" id="featuredGrid"><!--SSR:featured-->
         <!-- skeleton -->
@@ -334,24 +351,20 @@
     </div>
   </section>
 
-  <!-- CUSTOM ORDERS -->
-  <section class="custom" id="custom">
-    <div class="custom-inner">
-      <div class="custom-head">
-        <p class="section-eyebrow">Made to Order</p>
-        <h2 class="section-title">Your design, cut to perfection.</h2>
-        <p class="section-sub">Name plates, temple panels, logos, gifts or a design of your own — send us your idea and we&rsquo;ll turn it into a finished piece.</p>
+  <!-- PROCESS (three steps, numbered in Bronze) -->
+  <section class="eh-process" id="process">
+    <div class="eh-process-inner">
+      <div>
+        <p class="eyebrow">How it works</p>
+        <h2 class="section-title" style="margin:14px 0 16px">From file to finished piece</h2>
+        <p class="section-sub" style="color:var(--text2);max-width:440px">Send us your design, a sketch or just an idea. We&rsquo;ll turn it into a file for the machine, cut a sample and finish it the way you want.</p>
+        <div class="eh-actions"><a href="/contact?topic=custom#contactForm" class="btn-primary">Start a custom order</a></div>
       </div>
-      <div class="custom-steps">
-        <div class="custom-step"><h3>Share your idea</h3><p>Send a sketch, photo, text or logo along with the size and material you have in mind.</p></div>
-        <div class="custom-step"><h3>Approve the design</h3><p>We prepare a digital preview and a quote. Nothing is cut until you&rsquo;re happy with it.</p></div>
-        <div class="custom-step"><h3>Precision cutting</h3><p>Your piece is CNC-cut from MDF, plywood, solid wood or acrylic, then sanded and finished by hand.</p></div>
-        <div class="custom-step"><h3>Delivered to you</h3><p>Carefully packed and shipped to your door, or ready to collect from our workshop.</p></div>
-      </div>
-      <div class="custom-cta">
-        <a href="/contact?topic=custom#contactForm" class="btn-primary">Request a Custom Quote</a>
-        <a href="/shop" class="btn-outline">Browse Ready Designs</a>
-      </div>
+      <ol class="eh-steps">
+        <li><span class="num">01</span><div><h3>Send your design</h3><p>A file, a sketch or just an idea — with the size and material you have in mind.</p></div></li>
+        <li><span class="num">02</span><div><h3>We cut a sample</h3><p>You see a digital preview and a quote, and approve it before the full run is cut.</p></div></li>
+        <li><span class="num">03</span><div><h3>Finish and deliver</h3><p>Sanded, polished or painted by hand, packed with care and shipped — or collected from the workshop.</p></div></li>
+      </ol>
     </div>
   </section>
 
@@ -364,7 +377,7 @@
         <h2 class="section-title">Where machine precision meets handcraft.</h2>
         <p class="section-sub">At Eagle CNC Art &amp; Craft, every piece starts as a drawing on our screen and ends in a craftsman&rsquo;s hands. Our CNC machines cut intricate patterns with accuracy no hand tool can match; then each piece is sanded, painted or polished by hand.</p>
         <p class="section-sub" style="margin-top:-24px">From a single name plate to a full set of temple panels, we work in MDF, plywood, solid wood and acrylic — and we&rsquo;re always happy to make something that&rsquo;s entirely yours.</p>
-        <a href="/contact?topic=custom#contactForm" class="btn-outline">Start a Custom Order</a>
+        <a href="/contact?topic=custom#contactForm" class="btn-outline">Start a custom order</a>
       </div>
     </div>
   </section>
@@ -373,26 +386,31 @@
   <section class="categories">
     <div style="max-width:1200px;margin:0 auto">
       <p class="section-eyebrow" style="text-align:center">Browse by</p>
-      <h2 class="section-title" style="text-align:center;margin-bottom:48px">Shop by Category</h2>
+      <h2 class="section-title" style="text-align:center;margin-bottom:48px">Shop by category</h2>
       <div class="category-grid" id="categoryGrid"><!--SSR:categories-->
         <!-- populated by JS -->
       <!--/SSR:categories--></div>
     </div>
   </section>
 
-  <!-- VISIT US (local store) -->
-  <section class="visit" id="visit">
-    <div class="visit-inner">
-      <div>
-        <p class="section-eyebrow">Visit the Workshop</p>
-        <h2 class="section-title">Come see it in person.</h2>
-        <p class="section-sub">See the detail of our work up close, choose woods and finishes, and talk through your custom design with our team. Shop online with free shipping over <span data-money="free_shipping_threshold">$150</span>, or visit us in person.</p>
-        <div class="footer-nap visit-nap" data-store-nap></div>
-        <div style="display:flex;gap:12px;flex-wrap:wrap;margin-top:28px">
-          <a href="/contact" class="btn-primary">Directions &amp; Hours</a>
-          <a href="/contact#contactForm" class="btn-outline">Send a Message</a>
+  <!-- QUOTE (short form beside a Walnut panel with phone, email, address and hours) -->
+  <section class="eh-quote" id="visit">
+    <div class="eh-quote-inner">
+      <form class="eh-quote-form" id="quoteForm" novalidate>
+        <p class="eyebrow">Get a quote</p>
+        <h2>Tell us what you want made</h2>
+        <p class="sub">A rough idea is enough — we&rsquo;ll reply with a design preview and price, usually within one working day.</p>
+        <div class="grid">
+          <div><label for="qName">Name</label><input id="qName" autocomplete="name" required /></div>
+          <div><label for="qPhone">Phone</label><input id="qPhone" type="tel" inputmode="tel" autocomplete="tel" /></div>
+          <div class="full"><label for="qEmail">Email</label><input id="qEmail" type="email" inputmode="email" autocomplete="email" autocapitalize="off" required /></div>
+          <div class="full"><label for="qMsg">What would you like made?</label><textarea id="qMsg" required placeholder="e.g. Teak name plate, 45 × 15 cm, with our family name and house number"></textarea></div>
+          <input type="text" id="qWebsite" tabindex="-1" autocomplete="off" aria-hidden="true" style="position:absolute;left:-9999px;width:1px;height:1px" />
         </div>
-      </div>
+        <button type="submit" class="btn-primary">Send my request</button>
+        <p class="msg" id="qMsgOut" role="status"></p>
+      </form>
+      <div class="eh-quote-panel"><!--SSR:quotepanel--><!--/SSR:quotepanel--></div>
     </div>
   </section>
 
@@ -412,7 +430,7 @@
   <footer>
     <div class="footer-grid">
       <div>
-        <div class="footer-brand brand-lockup"><img src="/images/brand/eagle-mark-256.png" alt="" width="40" height="39" class="brand-mark" /><span class="brand-text"><span class="brand-name">EAGLE</span><span class="brand-sub">CNC Art &amp; Craft</span></span></div>
+        <div class="footer-brand brand-logo"><img src="/images/brand/eagle-logo-reversed-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" loading="lazy" /></div>
         <p class="footer-tagline">CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.</p>
         <div class="footer-nap" data-store-nap style="margin-top:16px;flex-direction:column;gap:6px"></div>
       </div>
@@ -435,7 +453,7 @@
       <div class="footer-col">
         <h3>Company</h3>
         <ul>
-          <li><a href="#story">Our Story</a></li>
+          <li><a href="/#process">Process</a></li>
           <li><a href="/contact">Visit the Workshop</a></li>
           <li><a href="account.html">My Account</a></li>
         </ul>
@@ -513,6 +531,24 @@
       } catch {}
     }
 
+
+    // ── Quote form → same enquiry inbox as the contact page
+    document.getElementById('quoteForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const out = document.getElementById('qMsgOut'), btn = e.target.querySelector('button');
+      const v = (id) => document.getElementById(id).value.trim();
+      out.className = 'msg';
+      if (!v('qName') || !/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(v('qEmail')) || v('qMsg').length < 5) {
+        out.textContent = 'Please add your name, a valid email and a few words about what you want made.'; out.classList.add('err'); return;
+      }
+      btn.disabled = true; btn.textContent = 'Sending…';
+      try {
+        const d = await api('/api/contact', { method: 'POST', body: JSON.stringify({ name: v('qName'), email: v('qEmail'), phone: v('qPhone'),
+          subject: 'Custom order / quote', message: v('qMsg'), website: v('qWebsite') }) });
+        out.textContent = d.message || 'Thanks — we\u2019ll be in touch soon.'; out.classList.add('ok'); e.target.reset();
+      } catch (err) { out.textContent = err.message; out.classList.add('err'); }
+      btn.disabled = false; btn.textContent = 'Send my request';
+    });
     // ── Newsletter ───────────────────────────────────────────
     document.getElementById('newsletterForm').addEventListener('submit', async (e) => {
       e.preventDefault();

@@ -11,7 +11,7 @@
   <title>Admin — Eagle CNC Art & Craft</title>
 <meta name="robots" content="noindex, nofollow" />
 <link rel="preconnect" href="https://fonts.googleapis.com" />
-<link href="https://fonts.googleapis.com/css2?family=Josefin+Sans:ital,wght@0,300;0,400;0,600;0,700;1,300;1,400&family=Plus+Jakarta+Sans:wght@400;500;600;700&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@400;500;600;700&display=swap" rel="stylesheet" />
 <style>
   *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
   :root {
@@ -120,6 +120,8 @@
   }
 </style>
   <link rel="stylesheet" href="/css/responsive.css" />
+  <link rel="stylesheet" href="/css/brand.css" />
+  <style>.admin-nav { background: transparent !important; border: none !important; } .admin-sidebar { background: #3E362B !important; } .admin-sidebar .logo span { color: #C9B49A !important; margin-top: 8px !important; }</style>
 </head>
 <body>
 
@@ -140,7 +142,7 @@
 <div id="dashScreen">
   <div class="admin-shell">
     <aside class="admin-sidebar">
-      <div class="logo" id="storeName">Eagle <span>Admin</span></div>
+      <div class="logo"><img src="/images/brand/eagle-logo-reversed-640.png" alt="Eagle CNC Art &amp; Craft" width="640" height="182" style="height:40px;width:auto;display:block" /><span>Admin</span></div>
       <nav class="admin-nav">
         <button class="admin-nav-item active" data-panel="overview">Overview</button>
         <button class="admin-nav-item" data-panel="orders">Orders <span class="nav-badge" id="badgeOrders" hidden></span></button>
@@ -395,7 +397,7 @@
   async function showDash() {
     $('loginScreen').style.display = 'none'; $('dashScreen').style.display = 'block';
     try { CFG = await (await fetch('/api/config')).json(); } catch {}
-    $('storeName').innerHTML = `${esc(CFG.store.name || 'Store')} <span>Admin</span>`;
+    // Sidebar shows the logo file (brand playbook: never retype the wordmark)
     document.title = `Admin — ${CFG.store.name || 'Store'}`;
     renderStoreDetails();
     await loadCategories();
