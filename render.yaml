@@ -9,7 +9,7 @@
 
 services:
   - type: web
-    name: aura-and-oak
+    name: eaglecnc
     runtime: node
     plan: free
     # Frankfurt is closest to alwaysdata's servers in Paris (faster pages)
@@ -41,7 +41,7 @@ services:
         generateValue: true
       - key: ADMIN_JWT_SECRET
         generateValue: true
-      # Public address, e.g. https://aura-and-oak.onrender.com
+      # Public address, e.g. https://eaglecnc.onrender.com
       - key: BASE_URL
         sync: false
       - key: STORE_CURRENCY
