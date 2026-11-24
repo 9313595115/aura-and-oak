@@ -104,6 +104,20 @@ Checkout picks the payment methods automatically from `.env`:
 - **Stripe** (cards) still works with `STRIPE_*` keys if you prefer it.
 - With none of these set, checkout runs in **preview mode** (no money taken).
 
+## Before you launch
+
+- **Payments:** with no Razorpay, Stripe or COD switched on, the live checkout shows
+  *“Online ordering opens soon”* with a WhatsApp button, and the server refuses unpaid
+  orders. (`ALLOW_PREVIEW_CHECKOUT=true` allows unpaid test orders for demos only.)
+- **Privacy & Terms:** `/privacy` and `/terms` fill themselves from `LEGAL_NAME`,
+  `LEGAL_ADDRESS`, `GSTIN`, `LEGAL_JURISDICTION` and `GRIEVANCE_OFFICER_*`. The server
+  log lists anything missing. Have a lawyer or CA review the wording.
+- **Photos:** images uploaded in the admin are stored in the database, so they survive
+  restarts and redeploys on hosts with temporary disks (like Render).
+- **Test data:** Admin → Settings → *Remove test data before launch* clears preview orders,
+  test customers, messages, reviews and subscribers, and puts the stock back. Once a real
+  order exists it only removes preview orders.
+
 ## Customisation options
 
 Each product can have options, written as simple lines in **Admin → Products**:

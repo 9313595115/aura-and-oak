@@ -162,7 +162,7 @@
 
     <p class="form-error" id="formError" role="alert"></p>
     <button class="place-order-btn" id="placeOrderBtn" onclick="placeOrder()">Place order</button>
-    <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">By placing your order you agree to our <a href="/shipping" style="text-decoration:underline">shipping</a> and <a href="/returns" style="text-decoration:underline">returns</a> policies.</p>
+    <p style="font-size:12px;color:var(--text2);margin-top:12px;text-align:center">By placing your order you agree to our <a href="/terms" style="text-decoration:underline">terms</a>, <a href="/shipping" style="text-decoration:underline">shipping</a> and <a href="/returns" style="text-decoration:underline">returns</a> policies, and our <a href="/privacy" style="text-decoration:underline">privacy policy</a>.</p>
   </div>
 
   <div class="order-summary-card">
@@ -233,7 +233,8 @@
   }
   async function refreshTotals() {
     const data = await api('/api/cart/totals', { method: 'POST', body: JSON.stringify({ discount_code: discountCode, payment_method: payMethod }) });
-    renderSummary(data); setPromoUi(data.discount); return data;
+    renderSummary(data); setPromoUi(data.discount);
+    cartWa = waLink(`Hi ${storeInfo().name || ''}, I'd like to order:\n\n` + data.items.map((i, n) => `${n + 1}. ${i.name} × ${i.quantity} — ${fmt(i.price * i.quantity)}` + (i.customization_summary ? `\n   (${i.customization_summary})` : '')).join('\n') + `\n\nTotal: ${fmt(data.totals.total)} (incl. shipping)\n\nMy name:\nDelivery PIN code:`); return data;
   }
   async function applyCheckoutPromo() {
     const input = document.getElementById('checkoutPromoInput');
@@ -311,7 +312,7 @@
     const methods = [];
     if (pm.razorpay) methods.push(['online', 'Pay online', 'UPI, cards, netbanking & wallets — secured by Razorpay', '/images/brand/pay-upi.svg']);
     else if (!config.simulated && config.stripePublishableKey && window.Stripe) methods.push(['card', 'Card payment', 'Visa, Mastercard, RuPay — secured by Stripe', '']);
-    else methods.push(['online', 'Pay online', 'Preview mode — no payment is taken yet', '']);
+    else if (config.previewCheckout !== false) methods.push(['online', 'Pay online', 'Preview mode — no payment is taken yet', '']);
     if (pm.cod) methods.push(['cod', 'Cash on delivery', (pm.codFee > 0 ? fmt(pm.codFee).replace(/\.00$/, '') + ' extra · ' : '') + 'pay when your order arrives' + (pm.codMax > 0 ? ` · orders up to ${fmt(pm.codMax).replace(/\.00$/, '')}` : ''), '']);
     payMethod = methods[0][0];
     box.innerHTML = methods.length > 1 || pm.razorpay || pm.cod ? methods.map(([id, title, sub], i) => `
@@ -414,6 +415,19 @@
     }
   }
 
+  // No payment method is switched on yet: offer WhatsApp / quote instead of a form that can't take payment
+  function showCheckoutClosed() {
+    const wa = waLink(`Hi ${storeInfo().name || ''}, I'd like to place an order. Here's what's in my cart:\n` +
+      Array.from(document.querySelectorAll('#summaryItems .summary-item-name, #summaryItems [data-name]')).map(el => '• ' + el.textContent.trim()).join('\n'));
+    document.getElementById('checkoutWrap').innerHTML = `<div class="empty-note checkout-closed" style="grid-column:1/-1">
+      <h2>Online ordering opens soon</h2>
+      <p style="margin:10px auto 22px;max-width:460px">We're setting up secure online payment. Until then, send us your order on WhatsApp or ask for a quote, and we'll confirm the price and delivery with you.</p>
+      ${wa ? `<a class="wa-order" style="max-width:340px;margin:0 auto" href="${esc(cartWa || wa)}" target="_blank" rel="noopener">${WA_ICON}Send my order on WhatsApp</a>` : ''}
+      <p style="margin-top:16px"><a href="/contact?topic=custom#contactForm" style="color:var(--primary);text-decoration:underline">Ask for a quote</a> · <a href="/cart.html" style="color:var(--primary);text-decoration:underline">Back to cart</a></p>
+    </div>`;
+  }
+  let cartWa = '';
+
   async function init() {
     const config = await getConfig();
     let data;
@@ -437,6 +451,7 @@
       p.innerHTML = 'Have an account? <a href="account.html?next=checkout.html" style="color:var(--primary);text-decoration:underline">Sign in</a> for faster checkout and order history. Guest checkout works too.';
       document.querySelector('h1.page-title').after(p);
     }
+    if (config.checkoutOpen === false) return showCheckoutClosed();
     await loadSavedAddresses();
     initPayment(config);
   }

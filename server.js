@@ -27,6 +27,7 @@ const helmet      = require("helmet");
 const compression = require("compression");
 const rateLimit   = require("express-rate-limit");
 const { parseOptionsText, formatOptionsText, readOptions, applyCustomization } = require("./lib/options");
+const { missingLegal, privacyHtml, termsHtml } = require("./lib/legal");
 
 const app        = express();
 const PORT       = process.env.PORT || 3000;
@@ -115,9 +116,12 @@ async function razorpay(method, pathName, body) {
 const safeEqual = (a, b) => { const x = Buffer.from(String(a)), y = Buffer.from(String(b)); return x.length === y.length && crypto.timingSafeEqual(x, y); };
 
 // ── Cash on delivery — on with COD_ENABLED=true; optional fee and maximum order value
+// Preview checkout (orders with no payment) is for testing only: on the live site it is off
+// unless ALLOW_PREVIEW_CHECKOUT=true, so nobody can place an unpaid order by accident.
+const PREVIEW_CHECKOUT = !IS_PROD || process.env.ALLOW_PREVIEW_CHECKOUT === "true";
+const CHECKOUT_CLOSED_MSG = "Online ordering is opening soon. Please send us your order on WhatsApp or ask for a quote, and we'll confirm it with you.";
 const COD = { enabled: process.env.COD_ENABLED === "true", fee: num(process.env.COD_FEE, 0), max: num(process.env.COD_MAX_ORDER, 0) };
-if (!stripe) console.warn("ℹ️  STRIPE_SECRET_KEY not set — checkout runs in SIMULATED payment mode (no real charges).");
-if (IS_PROD && !stripe) console.warn("⚠️  Production without Stripe: orders will be marked paid without payment. Set Stripe keys before launch.");
+if (!stripe && !razorpayOn && PREVIEW_CHECKOUT) console.warn(`${IS_PROD ? "⚠️  ALLOW_PREVIEW_CHECKOUT is on: anyone can place an order WITHOUT paying. Turn it off before launch." : "ℹ️  No Razorpay/Stripe keys — online payment runs in preview mode (no real charges)."}`);
 
 // ── Database ─────────────────────────────────────────────────
 const pool = mysql.createPool({
@@ -485,6 +489,27 @@ app.get("/shipping", (req, res) => renderPage(res, "shipping.html", {
   canonical: BASE_URL + "/shipping", image: "/images/hero.jpg",
   ld: [breadcrumbLd([["Home", "/"], ["Shipping", "/shipping"]])],
 }));
+const legalCtx = () => ({ payments: [razorpayOn && "Razorpay", stripe && "Stripe"].filter(Boolean), cod: COD.enabled });
+app.get(["/privacy", "/privacy.html", "/privacy-policy"], (req, res) => {
+  if (req.path !== "/privacy") return res.redirect(301, "/privacy");
+  renderPage(res, "privacy.html", {
+    title: `Privacy policy — ${STORE.name}`,
+    description: `How ${STORE.name} collects, uses and protects your personal information, and how to reach our grievance officer.`,
+    canonical: BASE_URL + "/privacy", image: "/images/hero.jpg",
+    ld: [breadcrumbLd([["Home", "/"], ["Privacy policy", "/privacy"]])],
+    fill: { legal: privacyHtml(STORE, legalCtx(), esc) },
+  });
+});
+app.get(["/terms", "/terms.html", "/terms-and-conditions"], (req, res) => {
+  if (req.path !== "/terms") return res.redirect(301, "/terms");
+  renderPage(res, "terms.html", {
+    title: `Terms & conditions — ${STORE.name}`,
+    description: `The terms for buying from ${STORE.name}: orders, personalisation, payment, delivery, returns and complaints.`,
+    canonical: BASE_URL + "/terms", image: "/images/hero.jpg",
+    ld: [breadcrumbLd([["Home", "/"], ["Terms & conditions", "/terms"]])],
+    fill: { legal: termsHtml(STORE, legalCtx(), esc) },
+  });
+});
 app.get("/returns", (req, res) => renderPage(res, "returns.html", {
   title: `Returns & exchanges — ${STORE.name}`,
   description: `Changed your mind? ${STORE.name} offers ${STORE.return_days}-day returns and exchanges on unused items. See how to start a return and when refunds arrive.`,
@@ -631,13 +656,26 @@ app.get("/sitemap.xml", h(async (req, res) => {
   const newest = products.reduce((m, p) => (p.updated_at && new Date(p.updated_at) > m ? new Date(p.updated_at) : m), new Date(0));
   const urls = [
     { loc: "/", pr: "1.0", mod: newest.getTime() ? newest : null, img: "/images/hero.jpg" }, { loc: "/shop", pr: "0.9", mod: newest.getTime() ? newest : null },
-    { loc: "/contact", pr: "0.7" }, { loc: "/work", pr: "0.8" }, { loc: "/shipping", pr: "0.3" }, { loc: "/returns", pr: "0.3" },
+    { loc: "/contact", pr: "0.7" }, { loc: "/work", pr: "0.8" }, { loc: "/shipping", pr: "0.3" }, { loc: "/returns", pr: "0.3" }, { loc: "/privacy", pr: "0.2" }, { loc: "/terms", pr: "0.2" },
     ...cats.map((c) => ({ loc: categoryPath(c), pr: "0.8" })),
     ...products.map((p) => ({ loc: productPath(p), pr: "0.8", mod: p.updated_at, img: p.image_url, title: p.name })),
   ];
   const body = urls.map((u) => `  <url><loc>${esc(BASE_URL + u.loc)}</loc>${u.mod ? `<lastmod>${new Date(u.mod).toISOString().slice(0, 10)}</lastmod>` : ""}<priority>${u.pr}</priority>`
     + (u.img ? `<image:image><image:loc>${esc(absUrl(u.img))}</image:loc>${u.title ? `<image:title>${esc(u.title)}</image:title>` : ""}</image:image>` : "") + `</url>`).join("\n");
   res.type("application/xml").send(`<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9" xmlns:image="http://www.google.com/schemas/sitemap-image/1.1">\n${body}\n</urlset>\n`);
+}));
+
+// Uploaded images: served from the disk cache, else from the database (then re-cached)
+const IMG_MIME = { jpg: "image/jpeg", png: "image/png", gif: "image/gif", webp: "image/webp" };
+app.get("/uploads/:name", h(async (req, res, next) => {
+  const name = req.params.name;
+  if (!/^[a-z0-9-]{1,80}\.(jpg|png|gif|webp)$/.test(name)) return res.status(404).end();
+  const file = path.join(UPLOAD_DIR, name);
+  if (fs.existsSync(file)) return next();
+  const [[row]] = await pool.query("SELECT mime, data FROM uploads WHERE name = ?", [name]);
+  if (!row) return res.status(404).end();
+  try { fs.mkdirSync(UPLOAD_DIR, { recursive: true }); fs.writeFileSync(file, row.data); } catch {}
+  res.set({ "Content-Type": row.mime, "Cache-Control": "public, max-age=2592000", "X-Content-Type-Options": "nosniff" }).send(row.data);
 }));
 
 // Static files (only /public). Clean URLs: /shop → shop.html
@@ -658,6 +696,8 @@ app.get("/api/config", (req, res) => {
   res.json({
     stripePublishableKey: stripe ? STRIPE_PUBLISHABLE_KEY || null : null,
     simulated: !stripe && !razorpayOn,
+    previewCheckout: !stripe && !razorpayOn && PREVIEW_CHECKOUT,
+    checkoutOpen: !!(stripe || razorpayOn || COD.enabled || PREVIEW_CHECKOUT),
     payments: { razorpay: razorpayOn, razorpayKeyId: razorpayOn ? RAZORPAY_KEY_ID : null, stripe: !!stripe,
                 cod: COD.enabled, codFee: COD.fee, codMax: COD.max },
     store: { ...publicStore, tax_rate },
@@ -1050,7 +1090,10 @@ app.post("/api/checkout/intent", checkoutLimiter, h(async (req, res) => {
       notes: { session_id: ident.session_id || "", user_id: ident.user_id ? String(ident.user_id) : "", email: str(req.body.email, 255) } });
     return res.json({ method: "razorpay", razorpayOrderId: rzOrder.id, keyId: RAZORPAY_KEY_ID, amount: rzOrder.amount, currency: rzOrder.currency, totals });
   }
-  if (!stripe) return res.json({ simulated: true, paymentIntentId: null, totals });
+  if (!stripe) {
+    if (!PREVIEW_CHECKOUT) throw new HttpError(503, CHECKOUT_CLOSED_MSG);
+    return res.json({ simulated: true, paymentIntentId: null, totals });
+  }
 
   const intent = await stripe.paymentIntents.create({
     amount: minorUnits(totals.total), currency: STORE.currency.toLowerCase(), payment_method_types: ["card"],
@@ -1095,6 +1138,7 @@ app.post("/api/checkout/complete", checkoutLimiter, h(async (req, res) => {
     if (intent.status !== "succeeded") throw new HttpError(402, "Payment has not completed yet.");
     paymentMode = "stripe"; paymentRef = piId;
   } else {
+    if (!PREVIEW_CHECKOUT) throw new HttpError(503, CHECKOUT_CLOSED_MSG);
     paymentRef = "sim_" + crypto.randomBytes(8).toString("hex");
   }
 
@@ -1254,6 +1298,49 @@ app.post("/api/admin/login", authLimiter, h(async (req, res) => {
   if (!admin || !(await bcrypt.compare(password, admin.password_hash))) throw new HttpError(401, "Invalid username or password.");
   const token = jwt.sign({ id: admin.id, username: admin.username, role: "admin" }, ADMIN_SECRET, { expiresIn: "12h" });
   res.json({ token, username: admin.username });
+}));
+
+// ── Pre-launch clean-up: remove test data before the shop opens ─────
+// Preview orders (no payment was ever taken) can always be removed, and their stock is put back.
+// Customers, messages, reviews and subscribers can only be cleared while there are NO real orders,
+// so this can never wipe a real customer's data after launch.
+async function cleanupCounts() {
+  const one = async (sql) => Number((await pool.query(sql))[0][0].n);
+  const real = await one("SELECT COUNT(*) AS n FROM orders WHERE payment_mode <> 'simulated'");
+  return {
+    preview_orders: await one("SELECT COUNT(*) AS n FROM orders WHERE payment_mode = 'simulated'"),
+    real_orders: real,
+    customers: await one("SELECT COUNT(*) AS n FROM users"),
+    messages: await one("SELECT COUNT(*) AS n FROM contact_messages"),
+    reviews: await one("SELECT COUNT(*) AS n FROM reviews"),
+    subscribers: await one("SELECT COUNT(*) AS n FROM newsletter_subscribers"),
+    locked: real > 0,
+  };
+}
+app.get("/api/admin/cleanup", adminRequired, h(async (req, res) => res.json(await cleanupCounts())));
+app.post("/api/admin/cleanup", adminRequired, h(async (req, res) => {
+  if (req.body.confirm !== "DELETE") throw bad('Type DELETE to confirm.');
+  const before = await cleanupCounts();
+  const conn = await pool.getConnection();
+  try {
+    await conn.beginTransaction();
+    // put back the stock that preview orders took (cancelled ones were already restocked)
+    await conn.query(`UPDATE products p JOIN (
+        SELECT oi.product_id, SUM(oi.quantity) AS q FROM order_items oi JOIN orders o ON o.id = oi.order_id
+        WHERE o.payment_mode = 'simulated' AND o.status <> 'cancelled' AND oi.product_id IS NOT NULL GROUP BY oi.product_id
+      ) t ON t.product_id = p.id SET p.stock_qty = p.stock_qty + t.q`);
+    await conn.query("DELETE FROM orders WHERE payment_mode = 'simulated'");   // order items go with them
+    if (!before.locked) {
+      await conn.query("DELETE FROM users");                  // addresses, carts, wishlists, reset links go with them
+      await conn.query("DELETE FROM cart_items");
+      await conn.query("DELETE FROM reviews");
+      await conn.query("DELETE FROM contact_messages");
+      await conn.query("DELETE FROM newsletter_subscribers");
+      await conn.query("UPDATE discount_codes SET used_count = 0");
+    }
+    await conn.commit();
+  } catch (e) { await conn.rollback(); throw e; } finally { conn.release(); }
+  res.json({ success: true, removed: before.locked ? { preview_orders: before.preview_orders } : before, after: await cleanupCounts() });
 }));
 
 app.post("/api/admin/change-password", adminRequired, h(async (req, res) => {
@@ -1440,7 +1527,10 @@ app.post("/api/admin/uploads", adminRequired, h(async (req, res) => {
   fs.mkdirSync(UPLOAD_DIR, { recursive: true });
   const base = slugify(String(req.body.filename || "image").replace(/\.[^.]+$/, "")).slice(0, 40);
   const name = `${base}-${crypto.randomBytes(4).toString("hex")}.${real}`;
-  fs.writeFileSync(path.join(UPLOAD_DIR, name), buf);
+  // Saved in the database so photos survive restarts and redeploys (Render's disk is temporary);
+  // the copy on disk is only a cache.
+  await pool.query("INSERT INTO uploads (name, mime, size, data) VALUES (?, ?, ?, ?)", [name, IMG_MIME[real], buf.length, buf]);
+  try { fs.writeFileSync(path.join(UPLOAD_DIR, name), buf); } catch {}
   res.json({ url: `/uploads/${name}` });
 }));
 
@@ -1577,6 +1667,9 @@ async function ensureDefaultAdmin() {
 if (require.main === module) {
   app.listen(PORT, async () => {
     console.log(`\n  ${STORE.name} running at ${BASE_URL}  (${IS_PROD ? "production" : "development"})\n`);
+    const legalTodo = missingLegal(STORE);
+    if (legalTodo.length) console.warn(`⚠️  Privacy/Terms pages need: ${legalTodo.join(", ")} (set them in the environment)`);
+    if (!stripe && !razorpayOn && !COD.enabled && !PREVIEW_CHECKOUT) console.warn("⚠️  No payment method is on (RAZORPAY_* or COD_ENABLED), so checkout shows 'opening soon'.");
     try {
       await pool.query("SELECT 1");
       await ensureDefaultAdmin();

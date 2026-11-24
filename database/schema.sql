@@ -202,3 +202,13 @@ CREATE TABLE IF NOT EXISTS contact_messages (
   is_read    TINYINT(1) NOT NULL DEFAULT 0,
   created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
+
+-- Images uploaded in the admin (kept here because the web host's disk is temporary)
+CREATE TABLE IF NOT EXISTS uploads (
+  id         INT AUTO_INCREMENT PRIMARY KEY,
+  name       VARCHAR(120) NOT NULL UNIQUE,
+  mime       VARCHAR(40)  NOT NULL,
+  size       INT          NOT NULL,
+  data       MEDIUMBLOB   NOT NULL,
+  created_at TIMESTAMP    NOT NULL DEFAULT CURRENT_TIMESTAMP
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;

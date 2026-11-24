@@ -259,6 +259,10 @@
           <p class="form-error" id="pwError" role="alert"></p>
           <button class="btn-primary" type="submit">Update password</button>
         </form>
+        <div class="card" id="cleanupCard" style="max-width:520px">
+          <h2 style="margin-top:0">Remove test data before launch</h2>
+          <div id="cleanupBody"><p class="hint">Loading…</p></div>
+        </div>
         <div class="card">
           <h2 style="margin-top:0">Store details</h2>
           <div class="kv" id="storeDetails"></div>
@@ -424,7 +428,7 @@
   function adminLogout() { clearAdminToken(); showLogin(); }
 
   const loaders = { overview: loadOverview, orders: loadOrders, products: loadProducts, categories: renderCategories,
-                    discounts: loadDiscounts, messages: loadMessages, reviews: loadReviews, customers: loadCustomers, settings: () => {} };
+                    discounts: loadDiscounts, messages: loadMessages, reviews: loadReviews, customers: loadCustomers, settings: loadCleanup };
   function switchPanel(name) {
     document.querySelectorAll('.admin-nav-item').forEach(el => el.classList.toggle('active', el.dataset.panel === name));
     document.querySelectorAll('.admin-panel').forEach(el => el.classList.toggle('active', el.id === 'panel-' + name));
@@ -786,8 +790,34 @@
       ['Name', s.name], ['Phone', s.phone], ['Email', s.email],
       ['Address', [s.street, s.city, s.region, s.postal_code, s.country].filter(Boolean).join(', ')], ['Hours', s.hours_display],
       ['Currency', s.currency], ['Shipping', `${fmt(s.shipping_flat)} · free over ${fmt(s.free_shipping_threshold)}`],
-      ['Tax', s.tax_rate ? `${s.tax_rate}% ${s.tax_label}` : 'none'], ['Payments', CFG.simulated ? 'Simulated (test mode)' : 'Stripe (live)'],
+      ['Tax', s.tax_rate ? `${s.tax_rate}% ${s.tax_label}` : 'none'],
+      ['Payments', [CFG.payments && CFG.payments.razorpay && 'Razorpay', CFG.payments && CFG.payments.stripe && 'Stripe', CFG.payments && CFG.payments.cod && 'Cash on delivery'].filter(Boolean).join(', ') || (CFG.previewCheckout ? 'Preview mode (no payment taken)' : 'None — checkout shows "opening soon"')],
     ].map(([k, v]) => `<b>${k}:</b> ${esc(v || '— not set —')}`).join('<br/>');
+  }
+  async function loadCleanup() {
+    const box = $('cleanupBody');
+    try {
+      const c = await adminApi('/api/admin/cleanup');
+      const row = (n, label) => `<li><b>${Number(n)}</b> ${label}</li>`;
+      box.innerHTML = c.locked
+        ? `<p class="hint" style="margin-top:0">Your shop has real orders, so customers, messages and reviews are kept. Only preview orders (placed with no payment) can be removed.</p>
+           <ul style="margin:0 0 14px 18px;font-size:14px">${row(c.preview_orders, 'preview orders')}</ul>`
+        : `<p class="hint" style="margin-top:0">Clears everything created while testing, so the shop opens clean. Products, categories, promo codes and photos are kept. Stock taken by test orders is put back.</p>
+           <ul style="margin:0 0 14px 18px;font-size:14px">${row(c.preview_orders, 'preview orders')}${row(c.customers, 'customer accounts')}${row(c.messages, 'contact messages')}${row(c.reviews, 'reviews')}${row(c.subscribers, 'newsletter subscribers')}</ul>`;
+      const total = c.locked ? c.preview_orders : c.preview_orders + c.customers + c.messages + c.reviews + c.subscribers;
+      box.innerHTML += total ? `<label for="cleanupConfirm">Type DELETE to confirm</label><input id="cleanupConfirm" autocomplete="off" />
+           <p class="form-error" id="cleanupError" role="alert"></p>
+           <button class="btn-secondary" style="border-color:#A33A2B;color:#A33A2B" onclick="runCleanup()">Remove test data</button>`
+        : '<p class="hint" style="margin:0">Nothing to remove.</p>';
+    } catch (e) { box.innerHTML = `<p class="form-error">${esc(e.message)}</p>`; }
+  }
+  async function runCleanup() {
+    const err = $('cleanupError'); err.textContent = '';
+    if ($('cleanupConfirm').value.trim() !== 'DELETE') { err.textContent = 'Type DELETE (in capitals) to confirm.'; return; }
+    try {
+      await adminApi('/api/admin/cleanup', { method: 'POST', body: JSON.stringify({ confirm: 'DELETE' }) });
+      showToast('Test data removed'); loadCleanup();
+    } catch (e) { err.textContent = e.message; }
   }
   async function changePassword() {
     const err = $('pwError'); err.textContent = '';
