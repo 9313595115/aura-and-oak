@@ -103,11 +103,11 @@ function checkPin() {
 }
 
 function whatsappHref(p) {
-  const s = storeInfo(), num = String(s.whatsapp || s.phone || '').replace(/\D/g, '');
-  if (!num) return '';
-  const full = num.length === 10 ? '91' + num : num;
-  const text = `Hi ${s.name || ''}, I'm interested in "${p.name}" (${location.origin + productUrl(p)}). Can you help me with size, finish or a custom version?`;
-  return `https://wa.me/${full}?text=${encodeURIComponent(text)}`;
+  const s = storeInfo(), { values } = readCustomization();
+  const fields = (p.options && p.options.fields) || [];
+  const picked = fields.filter(f => values[f.key]).map(f => `${f.label}: ${values[f.key]}`).join(' · ');
+  const chosen = picked ? `\nMy choices so far: ${picked}` : '';
+  return waLink(`Hi ${s.name || ''}, I'm interested in "${p.name}" (${location.origin + productUrl(p)}). Can you help me with size, finish or a custom version?${chosen}`);
 }
 
 function stickyBarHtml(p) {

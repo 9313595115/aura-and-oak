@@ -61,6 +61,12 @@ function getConfig() {
   }
   return __cfgPromise;
 }
+// wa.me link to the store with a ready-written message ('' when WhatsApp is off)
+function waLink(text) {
+  const n = String(storeInfo().whatsapp || '').replace(/\D/g, '');
+  return n ? `https://wa.me/${n}${text ? '?text=' + encodeURIComponent(text) : ''}` : '';
+}
+const WA_ICON = '<svg viewBox="0 0 24 24" width="18" height="18" aria-hidden="true"><path fill="currentColor" d="M12 2a10 10 0 0 0-8.6 15.1L2 22l5-1.3A10 10 0 1 0 12 2zm0 18.2a8.2 8.2 0 0 1-4.2-1.2l-.3-.2-3 .8.8-2.9-.2-.3A8.2 8.2 0 1 1 12 20.2zm4.5-6.1c-.2-.1-1.5-.7-1.7-.8s-.4-.1-.6.1-.7.8-.8 1-.3.2-.5.1a6.7 6.7 0 0 1-3.3-2.9c-.2-.4.2-.4.7-1.3.1-.2 0-.3 0-.4l-.8-1.8c-.2-.5-.4-.4-.6-.4h-.5a1 1 0 0 0-.7.3 3 3 0 0 0-.9 2.2 5.2 5.2 0 0 0 1.1 2.8 11.9 11.9 0 0 0 4.6 4c1.7.7 2.4.8 3.2.7a2.8 2.8 0 0 0 1.8-1.3 2.3 2.3 0 0 0 .2-1.3c-.1-.1-.3-.2-.5-.3z"/></svg>';
 function storeInfo() { return (__cfg && __cfg.store) || {}; }
 
 function fmt(n) {
@@ -245,10 +251,11 @@ function applyStoreInfo() {
     ].filter(Boolean).join('');
   });
 
-  if (s.whatsapp && !document.getElementById('waFab') && !/admin|checkout/.test(location.pathname)) {
+  if (s.whatsapp && !document.getElementById('waFab') && !/admin|checkout|order-confirmation|reset-password/.test(location.pathname)) {
     const a = document.createElement('a');
-    a.id = 'waFab'; a.className = 'wa-fab'; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', 'Chat with us on WhatsApp');
-    a.href = `https://wa.me/${encodeURIComponent(s.whatsapp)}?text=${encodeURIComponent('Hi ' + (s.name || '') + ', I have a question')}`;
+    a.id = 'waFab'; a.className = 'wa-fab'; a.target = '_blank'; a.rel = 'noopener'; a.setAttribute('aria-label', 'Chat with us on WhatsApp'); a.title = 'Chat with us on WhatsApp';
+    const page = document.querySelector('h1') ? document.querySelector('h1').textContent.trim() : '';
+    a.href = waLink(`Hi ${s.name || ''}, I have a question` + (/\/product\//.test(location.pathname) && page ? ` about "${page}" (${location.href})` : '') + '.');
     a.innerHTML = '<svg viewBox="0 0 24 24" width="26" height="26" fill="currentColor"><path d="M20.5 3.5A11.8 11.8 0 0 0 12 0C5.4 0 0 5.4 0 12c0 2.1.6 4.2 1.6 6L0 24l6.2-1.6a12 12 0 0 0 5.8 1.5c6.6 0 12-5.4 12-12 0-3.2-1.2-6.2-3.5-8.4zM12 21.9c-1.8 0-3.6-.5-5.1-1.4l-.4-.2-3.7 1 1-3.6-.2-.4A9.9 9.9 0 0 1 2.1 12C2.1 6.5 6.5 2.1 12 2.1s9.9 4.4 9.9 9.9-4.4 9.9-9.9 9.9zm5.4-7.4c-.3-.1-1.8-.9-2-1s-.5-.1-.7.1-.8 1-.9 1.2-.3.2-.6.1a8.1 8.1 0 0 1-4-3.5c-.3-.5.3-.5.9-1.6.1-.2 0-.4 0-.5l-.9-2.2c-.2-.6-.5-.5-.7-.5h-.6c-.2 0-.5.1-.8.4-.3.3-1 1-1 2.5s1.1 2.9 1.2 3.1 2.1 3.2 5.1 4.5c1.9.8 2.6.9 3.6.7.6-.1 1.8-.7 2-1.4.3-.7.3-1.3.2-1.4l-.6-.2z"/></svg>';
     document.body.appendChild(a);
   }

@@ -498,6 +498,20 @@
   let orderSearchT; $('orderSearch').addEventListener('input', () => { clearTimeout(orderSearchT); orderSearchT = setTimeout(loadOrders, 300); });
   $('orderStatusFilter').addEventListener('change', loadOrders);
 
+  // wa.me link to the customer with an update that matches the order's status
+  function custWa(o) {
+    let d = String(o.shipping_phone || '').replace(/\D/g, '').replace(/^0+/, '');
+    if (d.length === 10) d = '91' + d;
+    if (d.length < 11 || d.length > 15) return '';
+    const shop = (CFG && CFG.store && CFG.store.name) || 'our workshop', hi = `Hi ${String(o.shipping_full_name || '').split(' ')[0]}, this is ${shop}.`;
+    const tracking = o.tracking_number ? ` Tracking: ${o.carrier ? o.carrier + ' ' : ''}${o.tracking_number}.` : '';
+    const msg = o.status === 'shipped' ? `${hi} Your order ${o.order_number} has been shipped!${tracking}`
+      : o.status === 'completed' ? `${hi} Thank you for your order ${o.order_number}. We hope you love it — we'd be grateful for a review on our website.`
+      : o.payment_mode === 'cod' && o.payment_status === 'unpaid' ? `${hi} We've received your cash-on-delivery order ${o.order_number} for ${fmt(o.total)}. Please reply to confirm so we can start making it.`
+      : `${hi} We've received your order ${o.order_number} and are working on it. We'll message you when it ships.`;
+    return `https://wa.me/${d}?text=${encodeURIComponent(msg)}`;
+  }
+
   async function viewOrder(id) {
     try {
       const o = await adminApi(`/api/admin/orders/${id}`);
@@ -505,7 +519,7 @@
       $('orderModalBody').innerHTML = `
         <p><strong>${esc(o.order_number)}</strong> · Order: ${statusPill(o.status)} · Payment: <span class="pill ${o.payment_status === 'paid' ? 'ok' : 'bad'}">${esc(o.payment_status)}</span>${o.payment_mode === 'cod' ? ' <span class="pill" style="background:#FFF4DE;color:#5A3E12">cash on delivery</span>' : o.payment_mode === 'razorpay' ? ' <span class="pill">Razorpay</span>' : ''}${o.payment_mode === 'simulated' ? ' <span class="pill">test payment</span>' : ''}</p>
         <div class="kv">
-          ${esc(o.email)}${o.shipping_phone ? ' · ' + esc(o.shipping_phone) : ''}<br/>
+          ${esc(o.email)}${o.shipping_phone ? ' · ' + esc(o.shipping_phone) : ''}${custWa(o) ? ` · <a href="${esc(custWa(o))}" target="_blank" rel="noopener" style="color:#1E7D45;font-weight:600">WhatsApp customer</a>` : ''}<br/>
           Placed ${new Date(o.created_at).toLocaleString()}<br/>
           <b>Ship to:</b> ${esc(o.shipping_full_name)}, ${esc(o.shipping_line1)}${o.shipping_line2 ? ', ' + esc(o.shipping_line2) : ''}, ${esc(o.shipping_city)}, ${esc(o.shipping_state)} ${esc(o.shipping_postal_code)}, ${esc(o.shipping_country)}
         </div>

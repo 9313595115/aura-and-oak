@@ -76,7 +76,7 @@ in the structured data Google reads:
 | Setting | Example |
 |---|---|
 | `STORE_NAME`, `STORE_TAGLINE` | Eagle CNC Art & Craft |
-| `STORE_PHONE`, `STORE_EMAIL`, `STORE_WHATSAPP` | WhatsApp adds a chat button on every page |
+| `STORE_PHONE`, `STORE_EMAIL`, `STORE_WHATSAPP` | WhatsApp (defaults to the store phone; `off` hides it): chat button on every page, “Ask about this design” on products, “Order on WhatsApp” in the cart, “Message us” after ordering, and “WhatsApp customer” in the admin order view |
 | `STORE_STREET`, `STORE_CITY`, `STORE_REGION`, `STORE_POSTAL_CODE`, `STORE_COUNTRY` | Drives the map and directions |
 | `STORE_HOURS` (for Google) / `STORE_HOURS_DISPLAY` (for people) | `Mo-Sa 10:00-20:00` / `Mon–Sat 10am–8pm` |
 | `STORE_MAPS_URL` | Your Google Business Profile link |

@@ -133,7 +133,8 @@
           <a href="/shop" class="btn-primary">Continue shopping</a>
           <a href="account.html" class="btn-secondary">${isLoggedIn() ? 'View Order History' : 'Create an Account'}</a>
         </div>
-        <p class="lookup-note">Questions about this order? <a href="/contact" style="text-decoration:underline">Contact us</a> with your order number.</p>
+        ${waLink() ? `<a class="wa-order" style="max-width:360px;margin:18px auto 0" href="${esc(waLink(`Hi ${storeInfo().name || ''}, I have a question about my order ${order.order_number}.`))}" target="_blank" rel="noopener">${WA_ICON}Message us about this order</a>` : ''}
+        <p class="lookup-note">Questions about this order? ${waLink() ? 'WhatsApp us or ' : ''}<a href="/contact" style="text-decoration:underline">contact us</a> with your order number.</p>
       `;
       if (fresh) loadCartCount();
     } catch (e) {

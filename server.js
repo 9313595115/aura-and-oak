@@ -36,13 +36,21 @@ const UPLOAD_DIR = path.join(PUBLIC_DIR, "uploads");
 const BASE_URL   = (process.env.BASE_URL || `http://localhost:${PORT}`).replace(/\/+$/, "");
 
 // ── Store / business settings (all from .env) ────────────────
+// WhatsApp number in international form (wa.me needs it): STORE_WHATSAPP, else the store phone.
+// A 10-digit Indian number gets 91 in front. STORE_WHATSAPP=off hides every WhatsApp button.
+function waNumber(wa, phone) {
+  if (/^(off|no|false|none)$/i.test(String(wa || "").trim())) return "";
+  let d = String(wa || phone || "").replace(/\D/g, "").replace(/^0+/, "");
+  if (d.length === 10) d = "91" + d;
+  return d.length >= 11 && d.length <= 15 ? d : "";
+}
 const num = (v, d) => (v === undefined || v === "" || isNaN(Number(v)) ? d : Number(v));
 const STORE = {
   name:          process.env.STORE_NAME || "Eagle CNC Art & Craft",
   tagline:       process.env.STORE_TAGLINE || "CNC-cut wall art, name plates, temple panels and personalised wooden gifts — precision cut, finished by hand.",
   email:         process.env.STORE_EMAIL || "",
   phone:         process.env.STORE_PHONE || "",
-  whatsapp:      (process.env.STORE_WHATSAPP || "").replace(/[^\d]/g, ""),
+  whatsapp:      waNumber(process.env.STORE_WHATSAPP, process.env.STORE_PHONE),
   street:        process.env.STORE_STREET || "",
   city:          process.env.STORE_CITY || "",
   region:        process.env.STORE_REGION || "",

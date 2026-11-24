@@ -239,6 +239,13 @@
   <script>
     let promoCode = sessionStorage.getItem('ao_promo') || '';
 
+    function cartWhatsApp(items, totals, discount) {
+      const lines = items.map((i, n) => `${n + 1}. ${i.name} × ${i.quantity} — ${fmt(i.price * i.quantity)}` + (i.customization_summary ? `\n   (${i.customization_summary})` : ''));
+      return waLink(`Hi ${storeInfo().name || ''}, I'd like to order:\n\n${lines.join('\n')}\n\n` +
+        (totals.discount_amount > 0 ? `Promo ${discount.code}: -${fmt(totals.discount_amount)}\n` : '') +
+        `Total: ${fmt(totals.total)} (incl. shipping)\n\nMy name:\nDelivery PIN code:`);
+    }
+
     // ── Render full cart (all totals come from the server) ────
     function renderCart({ items, totals, discount }) {
       const layout = document.getElementById('cartLayout');
@@ -305,6 +312,8 @@
           </form>
           <p id="promoMsg" style="font-size:12px;margin-top:8px;color:${discount.valid ? '#3F7D4F' : 'var(--primary)'}">${discount.valid ? (discount.free_shipping ? 'Free shipping applied ✓' : 'Code applied ✓') : esc(promoCode ? discount.message : '')}</p>
           <button class="checkout-btn" onclick="location.href='checkout.html'" ${items.some(i => i.quantity > i.stock_qty) ? 'disabled' : ''}>Proceed to checkout</button>
+          ${waLink() ? `<a class="wa-order" href="${esc(cartWhatsApp(items, totals, discount))}" target="_blank" rel="noopener">${WA_ICON}Order or ask on WhatsApp</a>
+          <p class="wa-order-note">Sends your cart to us on WhatsApp — handy for custom sizes or bulk orders.</p>` : ''}
           <a href="/shop" class="continue-link">Continue shopping</a>
         </div>`;
 
